@@ -1,0 +1,323 @@
+<!-- templates/game.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LLM-Enhanced Text Adventure</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #222;
+            color: #ccc;
+        }
+        #game-output {
+            background-color: #333;
+            border: 1px solid #555;
+            padding: 15px;
+            height: 400px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+        }
+        #input-form {
+            display: flex;
+        }
+        #player-input {
+            flex-grow: 1;
+            background-color: #333;
+            border: 1px solid #555;
+            padding: 8px;
+            color: #ccc;
+        }
+        button {
+            background-color: #555;
+            color: #ccc;
+            border: none;
+            padding: 8px 15px;
+            margin-left: 5px;
+        }
+        .npc-response {
+            color: #88cc88;
+        }
+        .player-input {
+            color: #8888ff;
+        }
+        .system-message {
+            color: #cccc88;
+            font-style: italic;
+        }
+        .typing-indicator {
+            display: none;
+            color: #aaa;
+            font-style: italic;
+        }
+        #status-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #333;
+            border: 1px solid #555;
+        }
+        #settings-panel {
+            background-color: #333;
+            border: 1px solid #555;
+            padding: 15px;
+            margin-top: 10px;
+            display: none;
+        }
+        .model-info {
+            font-size: 0.8em;
+            color: #aaa;
+        }
+        .character-info {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Text Adventure with Ollama LLM</h1>
+    <div id="game-output">
+        <div class="system-message">Welcome to the Tavern of the Forgotten Hero...</div>
+        <div class="npc-response">{{ response }}</div>
+    </div>
+    <div class="typing-indicator" id="typing-indicator">NPC is thinking...</div>
+    <form id="input-form" method="post">
+        <input type="text" id="player-input" name="player_input" placeholder="What will you do?" autocomplete="off" autofocus>
+        <button type="submit" id="submit-btn">Submit</button>
+    </form>
+    
+    <div id="status-bar">
+        <div>
+            <strong>Location:</strong> <span id="current-location">{{ game_state.current_location }}</span> | 
+            <strong>Speaking with:</strong> <span id="current-npc">{{ game_state.current_npc }}</span>
+        </div>
+        <div>
+            <button id="settings-btn">Settings</button>
+        </div>
+    </div>
+    
+    <div id="settings-panel">
+        <h3>LLM Settings</h3>
+        <div class="model-info">
+            <strong>Current Model:</strong> <span id="current-model">Loading...</span>
+        </div>
+        <div style="margin-top: 10px;">
+            <label for="model-select">Change Model:</label>
+            <select id="model-select">
+                <option value="">Loading models...</option>
+            </select>
+            <button id="change-model-btn">Apply</button>
+        </div>
+        
+        <h3>Character Info</h3>
+        <div class="character-info" id="character-info">
+            Select a character to view information
+        </div>
+    </div>
+    
+    <script>
+        // DOM elements
+        const outputDiv = document.getElementById('game-output');
+        const inputForm = document.getElementById('input-form');
+        const playerInput = document.getElementById('player-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const currentLocation = document.getElementById('current-location');
+        const currentNPC = document.getElementById('current-npc');
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+        const currentModel = document.getElementById('current-model');
+        const modelSelect = document.getElementById('model-select');
+        const changeModelBtn = document.getElementById('change-model-btn');
+        const characterInfo = document.getElementById('character-info');
+        
+        // Auto-scroll to bottom of output
+        function scrollToBottom() {
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        }
+        
+        // Add message to the game output
+        function addMessage(message, className) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = className;
+            messageDiv.textContent = message;
+            outputDiv.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        // Show typing indicator
+        function showTypingIndicator() {
+            typingIndicator.style.display = 'block';
+            scrollToBottom();
+        }
+        
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            typingIndicator.style.display = 'none';
+        }
+        
+        // Handle form submission with AJAX
+        inputForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const input = playerInput.value.trim();
+            if (!input) return;
+            
+            // Add player input to display
+            addMessage('> ' + input, 'player-input');
+            
+            // Clear input field and disable form
+            playerInput.value = '';
+            playerInput.disabled = true;
+            submitBtn.disabled = true;
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Send request to server
+            fetch('/api/interact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ player_input: input }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide typing indicator
+                hideTypingIndicator();
+                
+                // Add NPC response
+                addMessage(data.response, 'npc-response');
+                
+                // Update game state display
+                currentLocation.textContent = data.game_state.current_location;
+                currentNPC.textContent = data.game_state.current_npc;
+                
+                // Re-enable form
+                playerInput.disabled = false;
+                submitBtn.disabled = false;
+                playerInput.focus();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                hideTypingIndicator();
+                addMessage('Error communicating with the server.', 'system-message');
+                
+                // Re-enable form
+                playerInput.disabled = false;
+                submitBtn.disabled = false;
+                playerInput.focus();
+            });
+        });
+        
+        // Settings panel toggle
+        settingsBtn.addEventListener('click', function() {
+            if (settingsPanel.style.display === 'block') {
+                settingsPanel.style.display = 'none';
+            } else {
+                settingsPanel.style.display = 'block';
+                // Load model info when panel opens
+                loadModelInfo();
+                loadAvailableModels();
+            }
+        });
+        
+        // Load current model info
+        function loadModelInfo() {
+            fetch('/api/model/info')
+                .then(response => response.json())
+                .then(data => {
+                    currentModel.textContent = data.model_name;
+                    
+                    // Add additional model info if available
+                    let infoText = data.model_name;
+                    
+                    if (data.quantization_level) {
+                        infoText += ` (${data.quantization_level})`;
+                    }
+                    
+                    if (data.size) {
+                        const sizeGB = (data.size / (1024 * 1024 * 1024)).toFixed(2);
+                        infoText += ` - ${sizeGB} GB`;
+                    }
+                    
+                    currentModel.textContent = infoText;
+                })
+                .catch(error => {
+                    console.error('Error loading model info:', error);
+                    currentModel.textContent = 'Error loading model info';
+                });
+        }
+        
+        // Load available models
+        function loadAvailableModels() {
+            fetch('/api/models')
+                .then(response => response.json())
+                .then(data => {
+                    modelSelect.innerHTML = '';
+                    
+                    if (data.models && data.models.length > 0) {
+                        data.models.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            modelSelect.appendChild(option);
+                        });
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'No models available';
+                        modelSelect.appendChild(option);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading models:', error);
+                    modelSelect.innerHTML = '<option value="">Error loading models</option>';
+                });
+        }
+        
+        // Change model
+        changeModelBtn.addEventListener('click', function() {
+            const selectedModel = modelSelect.value;
+            if (!selectedModel) return;
+            
+            // Show loading indicator
+            currentModel.textContent = 'Changing model...';
+            
+            // Send request to change model
+            fetch('/api/change_model', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ model_name: selectedModel }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentModel.textContent = data.message;
+                    addMessage(`System: Changed LLM model to ${selectedModel}`, 'system-message');
+                    
+                    // Reload model info
+                    setTimeout(loadModelInfo, 1000);
+                } else {
+                    currentModel.textContent = 'Error: ' + data.error;
+                }
+            })
+            .catch(error => {
+                console.error('Error changing model:', error);
+                currentModel.textContent = 'Error changing model';
+            });
+        });
+        
+        // Initialize the UI
+        scrollToBottom();
+        playerInput.focus();
+    </script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Game</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #222;
+            color: #ccc;
+        }
+        #game-output {
+            background-color: #333;
+            border: 1px solid #555;
+            padding: 15px;
+            height: 300px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+        }
+        #input-form {
+            display: flex;
+        }
+        #player-input {
+            flex-grow: 1;
+            background-color: #333;
+            border: 1px solid #555;
+            padding: 8px;
+            color: #ccc;
+        }
+        button {
+            background-color: #555;
+            color: #ccc;
+            border: none;
+            padding: 8px 15px;
+            margin-left: 5px;
+        }
+        .npc-response {
+            color: #88cc88;
+        }
+        .player-input {
+            color: #8888ff;
+        }
+        .system-message {
+            color: #cccc88;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Text Adventure Game</h1>
+    <div id="game-output">
+        <div class="system-message">Welcome to the Tavern of the Forgotten Hero...</div>
+        <div class="npc-response">{{ response }}</div>
+    </div>
+    <form id="input-form">
+        <input type="text" id="player-input" placeholder="Enter your command" autocomplete="off">
+        <button type="submit">Submit</button>
+    </form>
+    
+    <div style="margin-top: 20px;">
+        <p><strong>Location:</strong> {{ game_state.current_location }}</p>
+        <p><strong>Speaking with:</strong> {{ game_state.current_npc }}</p>
+    </div>
+    
+    <script>
+        // DOM elements
+        const outputDiv = document.getElementById('game-output');
+        const inputForm = document.getElementById('input-form');
+        const playerInput = document.getElementById('player-input');
+        
+        // Auto-scroll to bottom of output
+        function scrollToBottom() {
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        }
+        
+        // Add message to the game output
+        function addMessage(message, className) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = className;
+            messageDiv.textContent = message;
+            outputDiv.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        // Handle form submission with AJAX
+        inputForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const input = playerInput.value.trim();
+            if (!input) return;
+            
+            // Add player input to display
+            addMessage('> ' + input, 'player-input');
+            
+            // Clear input field
+            playerInput.value = '';
+            
+            // Send request to server
+            fetch('/api/interact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ player_input: input }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Add NPC response
+                addMessage(data.response, 'npc-response');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                addMessage('Error communicating with the server.', 'system-message');
+            });
+        });
+        
+        // Initialize the UI
+        scrollToBottom();
+        playerInput.focus();
+    </script>
+</body>
+</html>
