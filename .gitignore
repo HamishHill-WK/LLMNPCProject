@@ -2,3 +2,5 @@ models/
 .venv/
 __pycache__/
 game.log
+conversations/
+test_results/

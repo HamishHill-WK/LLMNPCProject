@@ -15,7 +15,7 @@ class NPCManager:
     def _initialize_llm_service(self):
         """Initialize the LLM service based on environment settings"""
         # Get settings from environment variables or use defaults
-        model_name = os.environ.get("OLLAMA_MODEL", "llama2")
+        model_name = os.environ.get("OLLAMA_MODEL", "deepseek-r1:7b")
         ollama_host = os.environ.get("OLLAMA_HOST", "localhost")
         ollama_port = os.environ.get("OLLAMA_PORT", "11434")
         base_url = f"http://{ollama_host}:{ollama_port}"

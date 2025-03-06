@@ -1,0 +1,42 @@
+{
+  "name": "victor_interrogation",
+  "description": "Formal interrogation of Victor Reed by the player (detective) with his attorney James Carter present",
+  "npcs": ["suspect_victor", "attorney_james"],
+  "player_role": "detective",
+  "initial_prompt": "The interrogation room is tense as you (the detective) prepare to question Victor Reed about the jewelry store robbery. His attorney James Carter sits beside him, watchful and ready to intervene if the questioning becomes problematic. You have evidence suggesting Victor's involvement, but getting him to confess won't be easy. Victor maintains a confident demeanor, but occasional glances at his attorney betray his concern. You must decide which evidence to present and what approach to take in your questioning strategy.",
+  "environment": {
+    "location": "interrogation room",
+    "time_of_day": "afternoon",
+    "weather": "not relevant (indoor setting)",
+    "objects": ["metal table", "chairs", "recording equipment", "case file", "evidence folders", "one-way mirror", "water bottles", "clock showing time pressure"]
+  },
+  "available_evidence": [
+    "security_footage",
+    "stolen_jewelry",
+    "witness_statement_1",
+    "witness_statement_2",
+    "financial_records",
+    "text_messages",
+    "prior_record",
+    "pawn_shop_receipt"
+  ],
+  "interrogation_approaches": [
+    "sympathetic", 
+    "aggressive",
+    "matter-of-fact",
+    "deceptive",
+    "bargaining"
+  ],
+  "attorney_intervention_triggers": [
+    "direct accusations without evidence",
+    "promises outside legal authority",
+    "excessive pressure tactics",
+    "questions about other unrelated crimes",
+    "attempts to continue questioning after client indicates desire to stop"
+  ],
+  "success_indicators": {
+    "trust_building": ["consistent approach", "acknowledging concerns", "factual honesty"],
+    "pressure_points": ["financial troubles", "gambling connections", "prior record", "inconsistent alibis"],
+    "confession_pathway": ["establish presence at scene", "connect to stolen goods", "break down timeline", "offer reasonable deal"]
+  }
+}

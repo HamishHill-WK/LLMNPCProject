@@ -1,0 +1,24 @@
+{
+  "name": "lisa_attorney_consultation",
+  "description": "Private consultation between Lisa Morales and her attorney James Carter to discuss the case and her options",
+  "npcs": ["suspect_lisa", "attorney_james"],
+  "initial_prompt": "Lisa Morales nervously taps her fingers on the table as her attorney James Carter organizes his notes. In this private consultation room, they have 30 minutes to discuss her situation before the next interrogation. Lisa is visibly anxious about both the case and how this might affect her son and elderly mother. James must balance giving her realistic advice while managing her obvious emotional distress. Their conversation will reveal Lisa's perspective on the robbery and her relationship with Victor Reed.",
+  "environment": {
+    "location": "attorney consultation room",
+    "time_of_day": "morning",
+    "weather": "not relevant (indoor setting)",
+    "objects": ["small table", "uncomfortable chairs", "tissues", "case files", "water bottle", "surveillance camera (no audio)", "family photo Lisa keeps in her wallet"]
+  },
+  "case_knowledge": {
+    "known_evidence": ["stolen_jewelry", "financial_records"],
+    "suspected_evidence": ["security_footage", "text_messages"],
+    "unknown_evidence": ["witness_statement_1", "witness_statement_2", "pawn_shop_receipt", "prior_record"]
+  },
+  "conversation_parameters": {
+    "privacy_level": "high",
+    "time_limit": 30,
+    "interruption_chance": "low",
+    "attorney_goals": ["assess client truthfulness", "evaluate potential for cooperation deal", "prepare for interrogation"],
+    "client_goals": ["understand potential sentences", "express concerns about family", "determine best path forward"]
+  }
+}

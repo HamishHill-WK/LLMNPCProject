@@ -1,0 +1,71 @@
+{
+  "name": "jewelry_store_robbery",
+  "description": "A detective interrogates two suspects in a jewelry store robbery case, trying to determine who played what role and secure a confession.",
+  "npcs": ["suspect_victor", "suspect_lisa", "attorney_james"],
+  "initial_prompt": "The evidence is clear that both Victor Reed and Lisa Morales were involved in the jewelry store robbery, but determining who was the mastermind and who was the accomplice remains uncertain. As the detective, you have 48 hours to secure a confession from one or both suspects before charges must be filed. The stolen jewelry was found in a car registered to Lisa but frequently used by Victor. Security footage shows two figures at the scene, but faces aren't clearly visible. Your interrogation tactics and evidence presentation will influence whether either suspect confesses and implicates the other.",
+  "environment": {
+    "location": "police station",
+    "time_of_day": "varies",
+    "objects": ["interrogation table", "chairs", "one-way mirror", "case file", "recording device", "water bottles", "notepad"]
+  },
+  "evidence": [
+    {
+      "id": "security_footage",
+      "description": "Partially obscured security camera footage showing two figures at the jewelry store during the robbery. One person appears to be keeping watch while another breaks display cases.",
+      "revealed_to": []
+    },
+    {
+      "id": "stolen_jewelry",
+      "description": "Recovered jewelry worth $50,000 found in the trunk of a car registered to Lisa Morales but frequently used by Victor Reed.",
+      "revealed_to": []
+    },
+    {
+      "id": "witness_statement_1",
+      "description": "Statement from store owner confirming Victor Reed visited the store three times in the week before the robbery, asking unusual questions about security and closing procedures.",
+      "revealed_to": []
+    },
+    {
+      "id": "witness_statement_2",
+      "description": "Statement from gas station attendant placing Lisa's car near the jewelry store on the night of robbery, with a man matching Victor's description driving.",
+      "revealed_to": []
+    },
+    {
+      "id": "financial_records",
+      "description": "Lisa's bank statements showing imminent eviction and medical bills. Victor's records showing large gambling debts to known criminals.",
+      "revealed_to": []
+    },
+    {
+      "id": "text_messages",
+      "description": "Partial text message history between suspects showing they planned to meet on the night of the robbery, with vague references to 'taking care of business' and 'getting what we need'.",
+      "revealed_to": []
+    },
+    {
+      "id": "prior_record",
+      "description": "Victor's prior conviction for petty theft from 10 years ago. Lisa has no criminal record.",
+      "revealed_to": []
+    },
+    {
+      "id": "pawn_shop_receipt",
+      "description": "Receipt showing someone attempted to sell items matching description of stolen jewelry at a pawn shop 50 miles away. Shop owner couldn't positively identify either suspect.",
+      "revealed_to": []
+    }
+  ],
+  "time_constraints": {
+    "total_hours": 48,
+    "interrogation_cost": 2,
+    "evidence_review_cost": 1,
+    "attorney_meeting_cost": 2
+  },
+  "confession_thresholds": {
+    "victor": {
+      "trust_threshold": 65,
+      "pressure_threshold": 80,
+      "evidence_threshold": 70
+    },
+    "lisa": {
+      "trust_threshold": 75,
+      "pressure_threshold": 60,
+      "evidence_threshold": 50
+    }
+  }
+}

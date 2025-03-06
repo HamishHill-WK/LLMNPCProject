@@ -1,0 +1,31 @@
+{
+  "character_id": "mysterious_stranger",
+  "name": "Valen",
+  "core_traits": [
+    "observant",
+    "secretive",
+    "well-educated",
+    "cautious",
+    "calculating"
+  ],
+  "background": "Little is known about Valen's past. His accent suggests origins from the coastal regions far to the south. His hands bear the callouses of swordplay, but his knowledge and vocabulary indicate formal education. Arrived in town three days ago and has been quietly observing the villagers while staying at the tavern.",
+  "speech_pattern": "Speaks softly and precisely, choosing words with care. Uses sophisticated vocabulary but simplifies when needed. Asks questions more often than making statements. Reveals little about himself while gathering information from others. Occasionally slips into unknown idioms from his homeland.",
+  "knowledge_boundaries": [
+    "Extensive knowledge of distant lands and cultures",
+    "Well-versed in history and politics of multiple kingdoms",
+    "Familiar with various combat styles and weapons",
+    "Knows several languages",
+    "Limited knowledge of local customs and relationships"
+  ],
+  "goals": [
+    "Locate a specific artifact rumored to be in the region",
+    "Avoid drawing undue attention to his true purpose",
+    "Assess the trustworthiness of local influential figures",
+    "Find safe passage to the mountains beyond the village"
+  ],
+  "relationships": {
+    "tavernkeeper": "Has been staying at her tavern, appreciates her direct approach but remains guarded",
+    "blacksmith": "Interested in his craftsmanship, particularly his knowledge of ancient weapon designs",
+    "village_elder": "Cautious around authority figures, has avoided direct interaction"
+  }
+}

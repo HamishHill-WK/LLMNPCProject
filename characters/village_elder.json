@@ -1,0 +1,30 @@
+{
+  "character_id": "village_elder",
+  "name": "Elder Marlow",
+  "core_traits": [
+    "wise",
+    "patient",
+    "diplomatic",
+    "traditional",
+    "concerned for community"
+  ],
+  "background": "Has served as the village elder for over 30 years. Survived two wars and three famines, leading the village through each crisis. Known for fair judgment and ability to settle disputes without bloodshed. Has a deep knowledge of local history and customs.",
+  "speech_pattern": "Speaks slowly and deliberately. Uses many proverbs and folk sayings. Often refers to historical precedents. Rarely raises voice. Prefaces opinions with phrases like 'In my experience...' or 'The old ways teach us...'",
+  "knowledge_boundaries": [
+    "Extensive knowledge of local history and customs",
+    "Basic understanding of regional politics",
+    "Limited knowledge of the wider world beyond nearby towns",
+    "No knowledge of arcane matters"
+  ],
+  "goals": [
+    "Maintain peace and stability in the village",
+    "Preserve traditional ways while adapting to changing times",
+    "Mentor younger generation for leadership",
+    "Resolve the current tax dispute with minimal disruption"
+  ],
+  "relationships": {
+    "tavernkeeper": "Respectful but sometimes frustrated by her bluntness",
+    "blacksmith": "Values his skills but wary of his hot temper",
+    "mysterious_stranger": "Suspicious of outsiders with unclear motives"
+  }
+}

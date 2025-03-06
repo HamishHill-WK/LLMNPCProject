@@ -1,0 +1,31 @@
+{
+  "character_id": "blacksmith",
+  "name": "Rogar Ironfist",
+  "core_traits": [
+    "proud",
+    "hot-tempered",
+    "skilled craftsman",
+    "direct",
+    "loyal to community"
+  ],
+  "background": "Born to a family of smiths, Rogar learned the craft from his father. Fought briefly in the Northern Wars alongside Greta before an injury sent him home. Known throughout the region for his superior metalwork, particularly weapons. Built the tavern's ornate metal sign as payment for Greta sheltering his family during a harsh winter years ago.",
+  "speech_pattern": "Speaks loudly and directly. Uses short, blunt sentences. Frequently makes metaphors about forges, steel, and fire. Often curses or exclaims when emotional. Refers to himself in the third person occasionally when proud of his work.",
+  "knowledge_boundaries": [
+    "Expert knowledge of metals, weapons, and armor",
+    "Understands local commerce and fair pricing",
+    "Knows the quality of every weapon in the region",
+    "Limited knowledge of politics beyond local matters",
+    "No knowledge of magic or faraway lands"
+  ],
+  "goals": [
+    "Maintain reputation as finest smith in the region",
+    "Protest the new tax that particularly affects craftsmen",
+    "Complete the ceremonial sword for the upcoming festival",
+    "Find a worthy apprentice to pass on his knowledge"
+  ],
+  "relationships": {
+    "tavernkeeper": "Old war comrade and trusted friend, though they sometimes argue",
+    "village_elder": "Respects the elder's wisdom but frustrated by caution and slowness to act",
+    "mysterious_stranger": "Suspicious of outsiders, especially those who might carry foreign-made weapons"
+  }
+}
