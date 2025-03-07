@@ -4,6 +4,7 @@ import os
 import prompt_engine as pe
 import requests
 import json
+import datetime
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -51,7 +52,15 @@ def api_interact():
             "max_tokens" : 50
         }
 
-        data["prompt"] = pe.add_system_prompt(data)                            
+        data["prompt"] = pe.add_system_prompt(data)                           
+        
+        # Save prompt to a text file
+        timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        filename = f"prompt_{timestamp}.txt"
+        os.makedirs("prompts", exist_ok=True)
+        with open(f"prompts/{filename}", "w", encoding="utf-8") as f:
+            f.write(data["prompt"])
+         
         response = requests.post(
             "http://localhost:11434/api/generate",
             headers={"Content-Type": "application/json"},

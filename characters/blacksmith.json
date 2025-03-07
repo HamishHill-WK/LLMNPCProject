@@ -10,7 +10,7 @@
   ],
   "background": "Born to a family of smiths, Rogar learned the craft from his father. Fought briefly in the Northern Wars alongside Greta before an injury sent him home. Known throughout the region for his superior metalwork, particularly weapons. Built the tavern's ornate metal sign as payment for Greta sheltering his family during a harsh winter years ago.",
   "speech_pattern": "Speaks loudly and directly. Uses short, blunt sentences. Frequently makes metaphors about forges, steel, and fire. Often curses or exclaims when emotional. Refers to himself in the third person occasionally when proud of his work.",
-  "knowledge_boundaries": [
+  "knowledge": [
     "Expert knowledge of metals, weapons, and armor",
     "Understands local commerce and fair pricing",
     "Knows the quality of every weapon in the region",
