@@ -20,6 +20,14 @@ game_state = {
     'inventory': []
 }
 
+simulation_state = {
+    'current_location': 'tavern',
+    'npc_A': 'tavernkeeper',
+    'npc_B': 'blacksmith',
+    'all_characters': [],
+    'inventory': []
+}
+
 @app.route('/', methods=['GET', 'POST'])
 def game():
     response = "Welcome to the Text Adventure Game. Type something to get started."
@@ -40,6 +48,24 @@ def change_npc():
         npc_id = data['npc_id']
         
         game_state['current_npc'] = npc_id
+        
+        return jsonify({
+            "game_state": game_state
+        })
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/change_sim_npc', methods=['POST'])
+def change_simulation_npc():
+    try:
+        data = request.json
+        if not data or 'npc_id' not in data:
+            return jsonify({"error": "Missing NPC ID"}), 400
+            
+        npc_id = data['npc_id']
+        
+        simulation_state[f"npc_{data['target_id']}"] = npc_id
         
         return jsonify({
             "game_state": game_state

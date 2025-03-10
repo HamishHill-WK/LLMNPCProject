@@ -2,7 +2,7 @@ body {
     font-family: monospace;
     max-width: 800px;
     margin: 0 auto;
-    padding: 20px;
+    padding-bottom: 20px;
     background-color: #222;
     color: #ccc;
 }
@@ -10,13 +10,22 @@ body {
     background-color: #333;
     border: 1px solid #555;
     padding: 15px;
-    height: 300px;
+    flex: 1;
     overflow-y: scroll;
     margin-bottom: 10px;
     white-space: pre-wrap;
 }
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* or another fixed height */
+  }
 #input-form {
     display: flex;
+}
+#input-form-npc {
+    display: flex;
+    margin-top: 10px;
 }
 #player-input {
     flex-grow: 1;
@@ -26,6 +35,22 @@ body {
     color: #ccc;
 }
 #game-container{
+    background-color: #333;
+    border: 1px solid #555;
+    padding: 15px;
+    height: calc(100vh - 70px);
+}
+#npc-simulation{
+    background-color: #333;
+    border: 1px solid #555;
+    padding: 15px;
+}
+#npc-dropdown-A{
+    background-color: #333;
+    border: 1px solid #555;
+    padding: 15px;
+}
+#npc-dropdown-B{
     background-color: #333;
     border: 1px solid #555;
     padding: 15px;

@@ -6,7 +6,7 @@
 </head>
 <body>
     <h1>Text Adventure Game</h1>
-    <div id="game-container"> 
+    <div id="game-container" class="container"> 
         <div id="game-output">
             <div class="system-message">Welcome to the Tavern of the Forgotten Hero...</div>
             <div class="npc-response">{{ response }}</div>
@@ -16,7 +16,7 @@
             <button type="submit">Submit</button>
         </form>
         
-        <div style="margin-top: 20px;">
+        <div>
             <p><strong>Location:</strong> {{ game_state.current_location }}</p>
             <p>
                 <strong>Speaking with:</strong>
@@ -27,6 +27,28 @@
                 </select>
             </p>
         </div>
+        <div id = "npc-simulation">           
+            <p>
+                <strong>NPC A:</strong>
+                <select id="npc-dropdown-A" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;" onchange="changeSimNPC(this.value, 'A')">
+                    {% for npc in game_state.all_characters %}
+                        <option value="{{ npc }}" {% if npc == game_state.current_npc %}selected{% endif %}>{{ npc }}</option>
+                    {% endfor %}
+                </select>
+            </p>
+            <p>
+                <strong>NPC B:</strong>
+                <select id="npc-dropdown-B" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;" onchange="changeSimNPC(this.value, 'B')">
+                    {% for npc in game_state.all_characters %}
+                        <option value="{{ npc }}" {% if npc == game_state.current_npc %}selected{% endif %}>{{ npc }}</option>
+                    {% endfor %}
+                </select>
+            </p>
+            <form id="input-form-npc">
+                <input type="text" id="simulation-input" placeholder="Enter your initial prompt" autocomplete="off">
+                <button type="submit">Simulate</button>
+            </form>
+        </div>
     </div>
     
     <script>
@@ -34,7 +56,9 @@
         const outputDiv = document.getElementById('game-output');
         const inputForm = document.getElementById('input-form');
         const playerInput = document.getElementById('player-input');
-        
+        const inputFormNPC = document.getElementById('input-form-npc');
+        const simulationInput = document.getElementById('simulation-input');
+
         // Auto-scroll to bottom of output
         function scrollToBottom() {
             outputDiv.scrollTop = outputDiv.scrollHeight;
@@ -68,6 +92,25 @@
             });
         }
         
+        function changeSimNPC(npc, target) {
+            fetch('/api/change_sim_npc', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ npc_id: npc, target_id: target }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Add NPC response
+                addMessage(`NPC ${target} changed to ${npc}`, 'system-message');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                addMessage('Error communicating with the server.', 'system-message');
+            });
+        }
+
         // Handle form submission with AJAX
         inputForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -97,6 +140,37 @@
             .catch(error => {
                 console.error('Error:', error);
                 addMessage('Error communicating with the server.', 'system-message');
+            });
+        });
+
+        inputFormNPC.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const input = simulationInput.value.trim();
+            if (!input) return;
+            
+            // Add simulation input to display
+            addMessage('> ' + input, 'player-input');
+            
+            // Clear input field
+            simulationInput.value = '';
+            
+            // Send request to server
+            fetch('/api/simulate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ simulation_input: input }),
+            })
+            .then(response => response.json())
+            .then(data => {
+            // Add NPC response
+            addMessage(data.response, 'npc-response');
+            })
+            .catch(error => {
+            console.error('Error:', error);
+            addMessage('Error communicating with the server.', 'system-message');
             });
         });
         
