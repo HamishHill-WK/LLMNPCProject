@@ -10,7 +10,7 @@ import memory_manager
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-Mem_manager = memory_manager.MemoryManager(max_short_term=5)
+Mem_manager = memory_manager.MemoryManager(max_short_term=10)
 
 # Simple game state
 game_state = {
@@ -66,7 +66,7 @@ def api_interact():
             "max_tokens" : 50
         }
     
-        data["prompt"] = pe.add_system_prompt(data, game_state)                           
+        data["prompt"] = pe.add_system_prompt(data, game_state, Mem_manager)                           
         
         # Save prompt to a text file
         timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -83,7 +83,7 @@ def api_interact():
         
         response_json = response.json()
         
-        Mem_manager.add_interaction(game_state['current_npc'], player_input, response_json.get('response', 'No response'), game_state)
+        Mem_manager.add_interaction(game_state['current_npc'], player_input, response_json.get('response', 'No response'), game_state['current_location'])
         
         print(response_json)
         

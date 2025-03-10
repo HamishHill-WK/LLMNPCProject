@@ -61,17 +61,16 @@ def create_sample_character():
 characters = load_characters()
 
 
-def construct_npc_prompt(character_id, player_input, game_state):
+def construct_npc_prompt(character_id, player_input, game_state, mem_manager : memory_manager.MemoryManager):
     """Construct a prompt for the NPC based on character data and memory"""
     if character_id not in characters:
         return "Error: Character not found."
-    
     character = characters[character_id]
-    print(character)
     # Get character memory
-   # memory_context = memory_manager.get_character_memory(character_id)
     memory_context = "No previous interactions."
-        # Handle knowledge section safely
+    if mem_manager is not None:
+        memory_context = mem_manager.get_character_memory(game_state['all_characters'], character_id)
+        
     knowledge_section = ""
     if 'knowledge' in characters:
         if isinstance(character['knowledge'], list):
@@ -94,12 +93,12 @@ SPEECH PATTERN:
 KNOWLEDGE:
 {knowledge_section}
 
+PREVIOUS INTERACTIONS:
+{memory_context}
+
 CURRENT SITUATION:
 - Location: {game_state['current_location']}
 - Player has: {', '.join(game_state['inventory']) if game_state['inventory'] else 'nothing notable'}
-
-PREVIOUS INTERACTIONS:
-{memory_context}
 
 The player says to you: "{player_input}"
 
@@ -107,12 +106,12 @@ If the player asks a question or makes a request, you should respond in characte
 Respond in character as {character['name']}, using your established speech pattern and personality. Keep your response brief (1-3 sentences).\n
 Give your response in the following format:
 {character['name']} Dialogue output: "Character response here"
-Character Actions: Describe any actions or reactions here
+Character Actions: Describe any actions or reactions here<
 """
     
     return prompt
 
-def add_system_prompt(data, game_state=None):
+def add_system_prompt(data, game_state=None, mem_manager=None):
     """Add the appropriate system prompt to the data based on the current NPC
     
     Args:
@@ -132,7 +131,7 @@ def add_system_prompt(data, game_state=None):
     character_id = game_state['current_npc']
     player_input = data['prompt']
     
-    return construct_npc_prompt(character_id, player_input, game_state)
+    return construct_npc_prompt(character_id, player_input, game_state, mem_manager)
 
 def record_interaction(character_id, player_message, character_response, game_state):
     """Record an interaction in the character's memory"""

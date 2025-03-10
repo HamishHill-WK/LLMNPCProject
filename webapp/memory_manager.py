@@ -1,6 +1,7 @@
 # Memory management
 import os
 import json 
+import re
 
 class MemoryManager:
     def __init__(self, max_short_term=10):
@@ -22,7 +23,7 @@ class MemoryManager:
         with open('data/memories.json', 'w') as f:
             json.dump(self.memories, f, indent=2)
     
-    def add_interaction(self, character_id, player_message, character_response, game_state):
+    def add_interaction(self, character_id, player_message, character_response, location):
         """Add a new interaction to a character's memory"""
         # Initialize character memory if not exists
         if character_id not in self.memories:
@@ -30,12 +31,31 @@ class MemoryManager:
                 "short_term": [],
                 "long_term": []
             }
+            
+        # Extract the chain of thought (content between <think> tags)
+        chain_of_thought_match = re.search(r'<think>(.*?)</think>', character_response, re.DOTALL)
+        chain_of_thought = chain_of_thought_match.group(1).strip() if chain_of_thought_match else ""
+
+        # Remove the <think> content from the character response
+        clean_response = re.sub(r'<think>.*?</think>', '', character_response, flags=re.DOTALL).strip()
+        
+        # Split the response into dialogue and actions if "Character Actions:" is present
+        dialogue = clean_response
+        character_actions = ""
+
+        if "Character Actions:" in clean_response:
+            parts = clean_response.split("Character Actions:", 1)
+            dialogue = parts[0].strip()
+            character_actions = parts[1].strip() if len(parts) > 1 else ""
         
         # Add to short-term memory
         memory_item = {
+            "memory_id": len(self.memories[character_id]['short_term']) + 1,
             "player_message": player_message,
-            "character_response": character_response,
-            "game_state": game_state.copy()
+            "Model Chain of thought" : chain_of_thought,
+            "character_response": dialogue,
+            "character_actions": character_actions,
+            "location": location
         }
         
         self.memories[character_id]["short_term"].append(memory_item)
