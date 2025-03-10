@@ -58,6 +58,8 @@
         const playerInput = document.getElementById('player-input');
         const inputFormNPC = document.getElementById('input-form-npc');
         const simulationInput = document.getElementById('simulation-input');
+        const npcDropdownA = document.getElementById('npc-dropdown-A');
+        const npcDropdownB = document.getElementById('npc-dropdown-B');
 
         // Auto-scroll to bottom of output
         function scrollToBottom() {
@@ -143,6 +145,36 @@
             });
         });
 
+        // inputFormNPC.addEventListener('submit', function(e) {
+        //    e.preventDefault();
+            
+        //    const input = simulationInput.value.trim();
+        //    if (!input) return;
+            
+            // Add simulation input to display
+        //    addMessage('> ' + input, 'player-input');
+       // /    
+            // Clear input field
+         //   simulationInput.value = '';
+            
+            // Send request to server
+        //    fetch('/api/simulate', {
+        //    method: 'POST',
+        //    headers: {
+        //        'Content-Type': 'application/json',
+        //    },
+        //    body: JSON.stringify({ simulation_input: input, npc_a: npcDropdownA.value, npc_b: npcDropdownB.value }),
+        //    })
+        //    .then(response => response.json())
+//.then(data => {
+            // Add NPC response
+          //  addMessage(data.response, 'npc-response');
+         //   })
+         //   .catch(error => {
+        //    console.error('Error:', error);
+//addMessage('Error communicating with the server.', 'system-message');
+         //   });
+        //}); 
         inputFormNPC.addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -155,28 +187,51 @@
             // Clear input field
             simulationInput.value = '';
             
-            // Send request to server
-            fetch('/api/simulate', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ simulation_input: input }),
-            })
-            .then(response => response.json())
-            .then(data => {
-            // Add NPC response
-            addMessage(data.response, 'npc-response');
-            })
-            .catch(error => {
-            console.error('Error:', error);
-            addMessage('Error communicating with the server.', 'system-message');
+            // Close any existing EventSource
+            if (window.eventSource) {
+                window.eventSource.close();
+            }
+            
+            // Create a new EventSource for streaming
+            const url = `/api/simulate_stream?simulation_input=${encodeURIComponent(input)}&npc_a=${encodeURIComponent(npcDropdownA.value)}&npc_b=${encodeURIComponent(npcDropdownB.value)}`;
+            const eventSource = new EventSource(url);
+            window.eventSource = eventSource;
+            
+            // Handle incoming message events
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    // Add the appropriate NPC's message to the display
+                    addMessage(`${data.speaker}: ${data.message}`, 'npc-response');
+                } catch (error) {
+                    console.error('Error parsing SSE message:', error);
+                    addMessage(event.data, 'npc-response'); // Fallback to raw data
+                }
+            };
+            
+            // Handle end of conversation
+            eventSource.addEventListener('end', function() {
+                console.log('Conversation complete');
+                eventSource.close();
             });
+            
+            // Handle errors
+            eventSource.onerror = function() {
+                console.error('SSE connection error');
+                addMessage('Connection to server lost.', 'system-message');
+                eventSource.close();
+            };
         });
-        
         // Initialize the UI
         scrollToBottom();
         playerInput.focus();
+
+                // Clean up when leaving the page
+        window.addEventListener('beforeunload', function() {
+            if (window.eventSource) {
+                window.eventSource.close();
+            }
+        });
     </script>
 </body>
 </html>

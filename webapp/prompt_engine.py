@@ -60,7 +60,6 @@ def create_sample_character():
 # Load characters once when module is imported
 characters = load_characters()
 
-
 def construct_npc_prompt(character_id, player_input, game_state, mem_manager : memory_manager.MemoryManager):
     """Construct a prompt for the NPC based on character data and memory"""
     if character_id not in characters:
@@ -111,6 +110,58 @@ Character Actions: Describe any actions or reactions here<
     
     return prompt
 
+def construct_inter_npc_prompt(speaker_id, speaker_input, simulation_state, mem_manager : memory_manager.MemoryManager):
+    """Construct a prompt for the NPC based on character data and memory"""
+    listener_npc = simulation_state['npc_A'] if speaker_id == 'npc_B' else simulation_state['npc_B']
+    speaker_npc = simulation_state['npc_A'] if speaker_id == 'npc_A' else simulation_state['npc_B']
+    inital_prompt = simulation_state['initial_prompt']
+    if listener_npc not in characters:
+        return "Error: Character not found."
+    character = characters[listener_npc]
+    # Get character memory
+    memory_context = "No previous interactions."
+    if mem_manager is not None:
+        memory_context = mem_manager.get_character_memory(simulation_state['all_characters'], listener_npc)
+        
+    knowledge_section = ""
+    if 'knowledge' in characters:
+        if isinstance(character['knowledge'], list):
+            knowledge_section = ', '.join(character['knowledge'])
+        else:
+            knowledge_section = str(character['knowledge'])
+    
+    # Construct the prompt
+    prompt = f"""You are roleplaying as {character['name']}, a character in a text adventure game.
+
+CHARACTER TRAITS:
+- {', '.join(character['core_traits'])}
+
+BACKGROUND:
+{character['background']}
+
+SPEECH PATTERN:
+{character['speech_pattern']}
+
+KNOWLEDGE:
+{knowledge_section}
+
+PREVIOUS INTERACTIONS:
+{memory_context}
+
+CURRENT SITUATION:
+- Location: {simulation_state['current_location']}
+
+{speaker_npc} said to you: "{speaker_input}"
+
+If {speaker_npc} asks a question or makes a request, you should respond in character based on the previous interactions and knowledge in the text provided above.
+Respond in character as {character['name']}, using your established speech pattern and personality. Keep your response brief (1-3 sentences).\n
+Give your response in the following format:
+{character['name']} Dialogue output: "Character response here"
+Character Actions: Describe any actions or reactions here<
+"""
+    
+    return prompt
+
 def add_system_prompt(data, game_state=None, mem_manager=None):
     """Add the appropriate system prompt to the data based on the current NPC
     
@@ -127,6 +178,9 @@ def add_system_prompt(data, game_state=None, mem_manager=None):
             'current_npc': 'blacksmith',
             'inventory': []
         }
+        
+    if 'current_speaker' in game_state:
+        return construct_inter_npc_prompt(game_state['current_speaker'], data['prompt'], game_state, mem_manager)
     
     character_id = game_state['current_npc']
     player_input = data['prompt']
