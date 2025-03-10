@@ -5,14 +5,18 @@ import prompt_engine as pe
 import requests
 import json
 import datetime
+import memory_manager
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
+
+Mem_manager = memory_manager.MemoryManager(max_short_term=5)
 
 # Simple game state
 game_state = {
     'current_location': 'tavern',
     'current_npc': 'tavernkeeper',
+    'all_characters': [],
     'inventory': []
 }
 
@@ -26,6 +30,24 @@ def game():
         
     return render_template('game.html', response=response, game_state=game_state)
 
+@app.route('/api/change_npc', methods=['POST'])
+def change_npc():
+    try:
+        data = request.json
+        if not data or 'npc_id' not in data:
+            return jsonify({"error": "Missing NPC ID"}), 400
+            
+        npc_id = data['npc_id']
+        
+        game_state['current_npc'] = npc_id
+        
+        return jsonify({
+            "game_state": game_state
+        })
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/interact', methods=['POST'])
 def api_interact():
     """API endpoint for AJAX interactions"""
@@ -35,15 +57,7 @@ def api_interact():
             return jsonify({"error": "Missing player input"}), 400
             
         player_input = data['player_input']
-        
-        # # Simple response for testing
-        # if player_input.lower() == 'hello':
-        #     response = "Greetings, traveler! Welcome to the tavern."
-        # elif player_input.lower() == 'look':
-        #     response = "You see a cozy tavern with a few patrons. The tavernkeeper is wiping down the counter."
-        # else:
-        #     response = f"The tavernkeeper nods at your words: '{player_input}'"
-        
+      
         prompt = player_input.strip()
         data = {
             "model": "deepseek-r1:7b",  # Match the Ollama model name
@@ -51,8 +65,8 @@ def api_interact():
             "stream": False,
             "max_tokens" : 50
         }
-
-        data["prompt"] = pe.add_system_prompt(data)                           
+    
+        data["prompt"] = pe.add_system_prompt(data, game_state)                           
         
         # Save prompt to a text file
         timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -69,6 +83,8 @@ def api_interact():
         
         response_json = response.json()
         
+        Mem_manager.add_interaction(game_state['current_npc'], player_input, response_json.get('response', 'No response'), game_state)
+        
         print(response_json)
         
         generated_text = response_json.get('response', 'No response')
@@ -82,6 +98,7 @@ def api_interact():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
+    game_state['all_characters'] = pe.load_characters()
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         webbrowser.open('http://127.0.0.1:5001')
     app.run(debug=True, port=5001)

@@ -103,10 +103,11 @@ PREVIOUS INTERACTIONS:
 
 The player says to you: "{player_input}"
 
+If the player asks a question or makes a request, you should respond in character based on the previous interactions and knowledge in the text provided above.
 Respond in character as {character['name']}, using your established speech pattern and personality. Keep your response brief (1-3 sentences).\n
 Give your response in the following format:
-Dialogue: "Your response here"
-Actions: Describe any actions or reactions here
+{character['name']} Dialogue output: "Character response here"
+Character Actions: Describe any actions or reactions here
 """
     
     return prompt

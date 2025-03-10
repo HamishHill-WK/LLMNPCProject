@@ -2,67 +2,31 @@
 <html>
 <head>
     <title>Simple Game</title>
-    <style>
-        body {
-            font-family: monospace;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #222;
-            color: #ccc;
-        }
-        #game-output {
-            background-color: #333;
-            border: 1px solid #555;
-            padding: 15px;
-            height: 300px;
-            overflow-y: scroll;
-            margin-bottom: 10px;
-            white-space: pre-wrap;
-        }
-        #input-form {
-            display: flex;
-        }
-        #player-input {
-            flex-grow: 1;
-            background-color: #333;
-            border: 1px solid #555;
-            padding: 8px;
-            color: #ccc;
-        }
-        button {
-            background-color: #555;
-            color: #ccc;
-            border: none;
-            padding: 8px 15px;
-            margin-left: 5px;
-        }
-        .npc-response {
-            color: #88cc88;
-        }
-        .player-input {
-            color: #8888ff;
-        }
-        .system-message {
-            color: #cccc88;
-            font-style: italic;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <h1>Text Adventure Game</h1>
-    <div id="game-output">
-        <div class="system-message">Welcome to the Tavern of the Forgotten Hero...</div>
-        <div class="npc-response">{{ response }}</div>
-    </div>
-    <form id="input-form">
-        <input type="text" id="player-input" placeholder="Enter your command" autocomplete="off">
-        <button type="submit">Submit</button>
-    </form>
-    
-    <div style="margin-top: 20px;">
-        <p><strong>Location:</strong> {{ game_state.current_location }}</p>
-        <p><strong>Speaking with:</strong> {{ game_state.current_npc }}</p>
+    <div id="game-container"> 
+        <div id="game-output">
+            <div class="system-message">Welcome to the Tavern of the Forgotten Hero...</div>
+            <div class="npc-response">{{ response }}</div>
+        </div>
+        <form id="input-form">
+            <input type="text" id="player-input" placeholder="Enter your command" autocomplete="off">
+            <button type="submit">Submit</button>
+        </form>
+        
+        <div style="margin-top: 20px;">
+            <p><strong>Location:</strong> {{ game_state.current_location }}</p>
+            <p>
+                <strong>Speaking with:</strong>
+                <select id="npc-dropdown" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;" onchange="changeNPC(this.value)">
+                    {% for npc in game_state.all_characters %}
+                        <option value="{{ npc }}" {% if npc == game_state.current_npc %}selected{% endif %}>{{ npc }}</option>
+                    {% endfor %}
+                </select>
+            </p>
+        </div>
     </div>
     
     <script>
@@ -83,6 +47,25 @@
             messageDiv.textContent = message;
             outputDiv.appendChild(messageDiv);
             scrollToBottom();
+        }
+
+        function changeNPC(npc) {
+            fetch('/api/change_npc', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ npc_id: npc }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Add NPC response
+                addMessage(`NPC changed to ${npc}`, 'system-message');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                addMessage('Error communicating with the server.', 'system-message');
+            });
         }
         
         // Handle form submission with AJAX
