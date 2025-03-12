@@ -8,7 +8,7 @@ import datetime
 import memory_manager
 import time 
 import ollama_manager as om
-
+import re
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
@@ -82,6 +82,8 @@ def change_simulation_npc():
 def simulate_conversation():
     npc_a = request.args.get('npc_a')
     npc_b = request.args.get('npc_b')
+    print(f"app npca: {npc_a}")
+    print(f"app npcb: {npc_b}")
     initial_prompt = request.args.get('simulation_input')
     turns = int(request.args.get('turns', 5))
     
@@ -93,21 +95,29 @@ def simulate_conversation():
         message = initial_prompt
         data = {
             "model": "deepseek-r1:7b",  # Match the Ollama model name
-            "initial_prompt": initial_prompt,
+            "initial_prompt": message,
             "prompt": message,
             "stream": False,
             "max_tokens" : 50
         }
-        
+                
         # Simulate conversation turns
         for i in range(turns):
+            data["prompt"] = message
             # NPC 1's turn
             npc1_response = om.get_response(data, simulation_state, Mem_manager)
+            # Switch speaker in simulation state
+            Mem_manager.add_interaction(simulation_state[simulation_state['current_speaker']], message, npc1_response, simulation_state['current_location'])
+            simulation_state['current_speaker'] = 'npc_A' if simulation_state['current_speaker'] == 'npc_B' else 'npc_B'
+            npc1_response = re.sub(r'<think>.*?</think>', '', npc1_response, flags=re.DOTALL).strip()
             yield f"data: {json.dumps({'speaker': npc_a, 'message': npc1_response, 'turn': i * 2})}\n\n"
             #time.sleep(0.1)  # Small delay to simulate processing
             data["prompt"] = npc1_response
             # NPC 2's turn
             npc2_response = om.get_response(data, simulation_state, Mem_manager)
+            Mem_manager.add_interaction(simulation_state[simulation_state['current_speaker']], npc1_response, npc2_response, simulation_state['current_location'])
+            npc2_response = re.sub(r'<think>.*?</think>', '', npc2_response, flags=re.DOTALL).strip()
+            simulation_state['current_speaker'] = 'npc_A' if simulation_state['current_speaker'] == 'npc_B' else 'npc_B'
             yield f"data: {json.dumps({'speaker': npc_b, 'message': npc2_response, 'turn': i * 2 + 1})}\n\n"
             #time.sleep(0.1)  # Small delay to simulate processing
             
@@ -133,33 +143,13 @@ def api_interact():
             "model": "deepseek-r1:7b",  # Match the Ollama model name
             "prompt": prompt,
             "stream": False,
-            "max_tokens" : 50
+            "max_tokens" : 150
         }
     
-        # data["prompt"] = pe.add_system_prompt(data, game_state, Mem_manager)                           
-        
-        # # Save prompt to a text file
-        # timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        # filename = f"prompt_{timestamp}.txt"
-        # os.makedirs("prompts", exist_ok=True)
-        # with open(f"prompts/{filename}", "w", encoding="utf-8") as f:
-        #     f.write(data["prompt"])
-         
-        # response = requests.post(
-        #     "http://localhost:11434/api/generate",
-        #     headers={"Content-Type": "application/json"},
-        #     data=json.dumps(data)
-        # )
         response = om.get_response(data, game_state, Mem_manager)
-        print(response)
-       # response_json = json.loads(response)
         
         Mem_manager.add_interaction(game_state['current_npc'], player_input, response, game_state['current_location'])
         
-        #print(response_json)
-        
-        #generated_text = response_json.get('response', 'No response')
-
         return jsonify({
             "response": response,
             "game_state": game_state
@@ -169,7 +159,9 @@ def api_interact():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    game_state['all_characters'] = pe.load_characters()
+    character_data = pe.load_characters()
+    game_state['all_characters'] = character_data
+    simulation_state['all_characters'] = character_data    
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         webbrowser.open('http://127.0.0.1:5001')
     app.run(debug=True, port=5001)

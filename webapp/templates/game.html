@@ -193,6 +193,9 @@
             }
             
             // Create a new EventSource for streaming
+            console.log('NPC A:', npcDropdownA.value);
+            console.log('NPC B:', npcDropdownB.value);
+            console.log('Input:', input);
             const url = `/api/simulate_stream?simulation_input=${encodeURIComponent(input)}&npc_a=${encodeURIComponent(npcDropdownA.value)}&npc_b=${encodeURIComponent(npcDropdownB.value)}`;
             const eventSource = new EventSource(url);
             window.eventSource = eventSource;

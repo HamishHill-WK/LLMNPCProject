@@ -70,7 +70,7 @@ class MemoryManager:
         # Save updated memories
         self.save_memories()
     
-    def get_character_memory(self, characters, character_id):
+    def get_character_memory(self, characters : dict, character_id):
         """Get a character's memory formatted for prompt context"""
         if character_id not in self.memories:
             return "No previous interactions."
