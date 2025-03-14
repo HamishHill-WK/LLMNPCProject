@@ -97,7 +97,6 @@ PREVIOUS INTERACTIONS:
 
 CURRENT SITUATION:
 - Location: {game_state['current_location']}
-- Player has: {', '.join(game_state['inventory']) if game_state['inventory'] else 'nothing notable'}
 
 The player says to you: "{player_input}"
 
@@ -121,6 +120,7 @@ def construct_inter_npc_prompt(speaker_id, speaker_input, simulation_state, mem_
     if listener_npc not in characters:
         return "Error: Character not found."
     character = characters[listener_npc]
+    print(characters)
     # Get character memory
     memory_context = "No previous interactions."
     if mem_manager is not None:
@@ -152,13 +152,12 @@ KNOWLEDGE:
 CURRENT SITUATION:
 - Location: {simulation_state['current_location']}
 
-{speaker_npc} said to you: "{speaker_input}"
-
 If {speaker_npc} asks a question or makes a request, you should respond in character based on the previous interactions and knowledge in the text provided above.
-Respond in character as {character['name']}, using your established speech pattern and personality. Keep your response brief\n
+Respond in character as {character['name']}, using your established speech pattern and personality. Don't write more than a paragraph.\n
 
 PREVIOUS INTERACTIONS:
 {memory_context}
+{speaker_npc} said to you: "{speaker_input}"
 {character['name']} Dialogue output: Character response here
 """
     
@@ -174,13 +173,13 @@ def add_system_prompt(data, game_state=None, mem_manager=None):
     Returns:
         The constructed NPC prompt
     """
-    if game_state is None:
-        print("Game state is None")
-        game_state = {
-            'current_location': 'tavern',
-            'current_npc': 'blacksmith',
-            'inventory': []
-        }
+    # if game_state is None:
+    #     print("Game state is None")
+    #     game_state = {
+    #         'current_location': 'tavern',
+    #         'current_npc': 'blacksmith',
+    #         'inventory': []
+    #     }
         
     if 'current_speaker' in game_state:
         return construct_inter_npc_prompt(game_state['current_speaker'], data['prompt'], game_state, mem_manager)

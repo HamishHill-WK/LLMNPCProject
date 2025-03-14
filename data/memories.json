@@ -1,0 +1,25 @@
+{
+  "tavernkeeper": {
+    "short_term": [
+      {
+        "memory_id": 1,
+        "other_id": "Player",
+        "other_message": "hello my favourite animal is monkey",
+        "Model Chain of thought": "Okay, so I just met this player at Greta's tavern, right? They greeted me by saying their favorite animal is a monkey. That's interesting because monkeys aren't something I commonly encounter in my interactions with the local characters.\n\nFirst off, I need to think about how Greta would respond. She's gruff but fair, efficient, protective of her establishment, and values honesty. So, she probably wouldn't take kindly to being addressed as a tavernkeeper by someone who refers to monkeys\u2014she's used to more serious or villainous characters in the northern wars.\n\nI should consider what she might want from this player. Maybe they asked about the monkey? Or perhaps they just mentioned it without any specific question. It could be that the player is looking for information on why Greta would like them, and monkeys aren't really relevant to her business at a tavern.\n\nGreta values honesty, so if the player is hiding something or making an inappropriate comment, she might address that politely but firmly. She's protective of her family, which includes the patrons, so she wouldn't want anyone associating with monkeys in an unsavory way.\n\nMaybe I should ask the player directly about why they mentioned monkeys. Are they looking for a reason to be here? Or are they just passing through?\n\nI don't want to assume too much since this is the first interaction. So, my response could be something like asking what they're looking for in terms of monkeys or if that's part of their request.\n\nI need to make sure the reply keeps it short and fits Greta's speech pattern\u2014short sentences, northern dialect, using 'aye' and 'nay'. Also, actions should reflect her character: she might give a gruff but fair response with a slight smirk.\n\nPutting it all together, I'll ask the player directly about their interest in monkeys as a reason to be here. That way, I can move the conversation forward while respecting Greta's protective nature.",
+        "character_response": "Greta Dialogue output: \"Aye, that is of interest. Nay, what brings ye here today, fine fella?\"",
+        "character_actions": "Greta smirks slightly, her gaze lingering on the player as she ponders their request with a gruff efficiency in her tone.",
+        "location": "tavern"
+      },
+      {
+        "memory_id": 2,
+        "other_id": "Player",
+        "other_message": "I want to find other people who like monkies just as much as me. I'm hoping to go on a quest to find the legendary golden haired monkey of skull island. Do you know anyone who could help?",
+        "Model Chain of thought": "Okay, so I need to respond to the player's request for help finding a legendary golden-haired monkey on Skull Island. The player mentioned they're looking for others who share their passion and are willing to go on a quest.\n\nFirst, Greta is a gruff but fair character who runs the tavern and considers patrons her extended family. She uses short sentences with 'aye' and 'nay'. \n\nI should acknowledge the player's request positively since it shows genuine interest in their adventure. Greta wants to help but needs more info about the quest details, like where Skull Island is located or if there are any specific requirements.\n\nBy asking for more details, she demonstrates her protective nature towards patrons who might be venturing out into unknown territories. It also allows the player to provide necessary information that could aid in finding Greta and her tavern, which serves as a helpful hub for travelers.\n\nSo, I'll respond with an \"aye\" and then ask them about Skull Island's location or any other specifics they can share.",
+        "character_response": "Greta Dialogue output: \"Aye, let me know more about Skull Island\u2014where it is located or if there are any specific requirements you have.\"",
+        "character_actions": "Nods in understanding and requests more details to assist.",
+        "location": "tavern"
+      }
+    ],
+    "long_term": []
+  }
+}

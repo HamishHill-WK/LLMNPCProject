@@ -25,6 +25,7 @@ game_state = {
 simulation_state = {
     'current_location': 'tavern',
     'current_speaker' : 'npc_A',
+    'current_listener' : 'npc_B',
     'npc_A': 'tavernkeeper',
     'npc_B': 'blacksmith',
     'initial_prompt': 'You are in a tavern. The tavernkeeper greets you with a smile.',
@@ -107,19 +108,17 @@ def simulate_conversation():
             # NPC 1's turn
             npc1_response = om.get_response(data, simulation_state, Mem_manager)
             # Switch speaker in simulation state
-            Mem_manager.add_interaction(simulation_state[simulation_state['current_speaker']], message, npc1_response, simulation_state['current_location'])
+            Mem_manager.add_interaction(simulation_state[simulation_state['current_speaker']], simulation_state[simulation_state['current_listener']], message, npc1_response, simulation_state['current_location'])
             simulation_state['current_speaker'] = 'npc_A' if simulation_state['current_speaker'] == 'npc_B' else 'npc_B'
             npc1_response = re.sub(r'<think>.*?</think>', '', npc1_response, flags=re.DOTALL).strip()
-            yield f"data: {json.dumps({'speaker': npc_a, 'message': npc1_response, 'turn': i * 2})}\n\n"
-            #time.sleep(0.1)  # Small delay to simulate processing
+            yield f"data: {json.dumps({'speaker': simulation_state[simulation_state['current_speaker']], 'message': npc1_response, 'turn': i * 2})}\n\n"
             data["prompt"] = npc1_response
             # NPC 2's turn
             npc2_response = om.get_response(data, simulation_state, Mem_manager)
-            Mem_manager.add_interaction(simulation_state[simulation_state['current_speaker']], npc1_response, npc2_response, simulation_state['current_location'])
+            Mem_manager.add_interaction(simulation_state[simulation_state['current_speaker']], simulation_state[simulation_state['current_listener']], npc1_response, npc2_response, simulation_state['current_location'])
             npc2_response = re.sub(r'<think>.*?</think>', '', npc2_response, flags=re.DOTALL).strip()
             simulation_state['current_speaker'] = 'npc_A' if simulation_state['current_speaker'] == 'npc_B' else 'npc_B'
-            yield f"data: {json.dumps({'speaker': npc_b, 'message': npc2_response, 'turn': i * 2 + 1})}\n\n"
-            #time.sleep(0.1)  # Small delay to simulate processing
+            yield f"data: {json.dumps({'speaker': simulation_state[simulation_state['current_speaker']], 'message': npc2_response, 'turn': i * 2 + 1})}\n\n"
             
             # Update message for next turn
             message = npc2_response
@@ -148,7 +147,7 @@ def api_interact():
     
         response = om.get_response(data, game_state, Mem_manager)
         
-        Mem_manager.add_interaction(game_state['current_npc'], player_input, response, game_state['current_location'])
+        Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, game_state['current_location'])
         
         return jsonify({
             "response": response,
