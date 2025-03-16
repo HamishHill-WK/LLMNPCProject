@@ -85,6 +85,8 @@ def simulate_conversation():
     npc_b = request.args.get('npc_b')
     print(f"app npca: {npc_a}")
     print(f"app npcb: {npc_b}")
+    simulation_state['npc_A'] = npc_a
+    simulation_state['npc_B'] = npc_b
     initial_prompt = request.args.get('simulation_input')
     turns = int(request.args.get('turns', 5))
     
@@ -104,11 +106,18 @@ def simulate_conversation():
                 
         # Simulate conversation turns
         for i in range(turns):
+            print("appL boops")
             data["prompt"] = message
             # NPC 1's turn
+            #print(data)
+           # print(f"SIM STATE \n\n {simulation_state} \n end sim state \n\n")
             npc1_response = om.get_response(data, simulation_state, Mem_manager)
+           # print("appL bo00000000ops")
+
             # Switch speaker in simulation state
-            Mem_manager.add_interaction(simulation_state[simulation_state['current_speaker']], simulation_state[simulation_state['current_listener']], message, npc1_response, simulation_state['current_location'])
+            Mem_manager.add_interaction(simulation_state[simulation_state['current_speaker']], simulation_state['current_listener'], message, npc1_response, simulation_state['current_location'])
+            print("appL bo00000000ops20o2020202")
+            simulation_state['current_listener'] = simulation_state['current_speaker']
             simulation_state['current_speaker'] = 'npc_A' if simulation_state['current_speaker'] == 'npc_B' else 'npc_B'
             npc1_response = re.sub(r'<think>.*?</think>', '', npc1_response, flags=re.DOTALL).strip()
             yield f"data: {json.dumps({'speaker': simulation_state[simulation_state['current_speaker']], 'message': npc1_response, 'turn': i * 2})}\n\n"
@@ -117,6 +126,7 @@ def simulate_conversation():
             npc2_response = om.get_response(data, simulation_state, Mem_manager)
             Mem_manager.add_interaction(simulation_state[simulation_state['current_speaker']], simulation_state[simulation_state['current_listener']], npc1_response, npc2_response, simulation_state['current_location'])
             npc2_response = re.sub(r'<think>.*?</think>', '', npc2_response, flags=re.DOTALL).strip()
+            simulation_state['current_listener'] = simulation_state['current_speaker']
             simulation_state['current_speaker'] = 'npc_A' if simulation_state['current_speaker'] == 'npc_B' else 'npc_B'
             yield f"data: {json.dumps({'speaker': simulation_state[simulation_state['current_speaker']], 'message': npc2_response, 'turn': i * 2 + 1})}\n\n"
             
