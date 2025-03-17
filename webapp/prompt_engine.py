@@ -8,9 +8,9 @@ def load_characters():
     characters = {}
     
     # Create characters directory if it doesn't exist
-    if not os.path.exists('characters'):
-        os.makedirs('characters')
-        create_sample_character()
+    # if not os.path.exists('characters'):
+    #     os.makedirs('characters')
+    #     create_sample_character()
     
     # Load character files
     character_files = os.listdir('characters')
@@ -78,8 +78,10 @@ def construct_npc_prompt(character_id, player_input, game_state, mem_manager : m
             knowledge_section = str(character['knowledge'])
     
     # Construct the prompt
-    prompt = f"""You are roleplaying as {character['name']}, a character in a text adventure game.
+    prompt = f"""<system>You are roleplaying as {character['name']}, a character in a text adventure game.
+</system>
 
+<character_profile>
 CHARACTER TRAITS:
 - {', '.join(character['core_traits'])}
 
@@ -91,10 +93,17 @@ SPEECH PATTERN:
 
 KNOWLEDGE:
 {knowledge_section}
+</character_profile>
 
-PREVIOUS INTERACTIONS:
+<previous_interactions>
 {memory_context}
+</previous_interactions>
 
+<player_message>
+Player: {player_input}
+</player_message>
+
+<system>
 CURRENT SITUATION:
 - Location: {game_state['current_location']}
 
@@ -103,10 +112,14 @@ The player says to you: "{player_input}"
 If the player asks a question or makes a request, you should respond in character based on the previous interactions and knowledge in the text provided above.
 If the player says goodbye or otherwise ends the conversation, you should end the interaction naturally.
 Ask the player questions to move the conversation forward and to learn about them. Build on previous interactions and progress the conversation naturally.
-Respond in character as {character['name']}, using your established speech pattern and personality. Keep your response brief (1-3 sentences).
-Give your response in the following format:
-{character['name']} Dialogue output: "Character response here"
-Character Actions: Describe any actions or reactions here
+Respond in character as {character['name']}, using your established speech pattern and personality. Don't write more than a paragraph.
+
+You can use <think> tags to write your thought process, which will not be part of your actual response.
+</system>
+
+<character_response>
+{character['name']}:
+</character_response>
 """
     
     return prompt
@@ -114,18 +127,17 @@ Character Actions: Describe any actions or reactions here
 def construct_inter_npc_prompt(speaker_id, speaker_input, simulation_state, mem_manager : memory_manager.MemoryManager):
     """Construct a prompt for the NPC based on character data and memory"""
     listener_npc = simulation_state['npc_A'] if speaker_id == 'npc_B' else simulation_state['npc_B']
-    print(f"PE listener: {listener_npc}")
     speaker_npc = simulation_state['npc_A'] if speaker_id == 'npc_A' else simulation_state['npc_B']
-    print(f"PE speaker: {speaker_npc}")
+
     inital_prompt = simulation_state['initial_prompt']
     if listener_npc not in characters:
         return "Error: Character not found."
+    
     character = characters[listener_npc]
     # Get character memory
     memory_context = "No previous interactions."
     if mem_manager is not None:
         memory_context = mem_manager.get_character_memory(simulation_state['all_characters'], listener_npc)
-        print(f"Prompt engine: Memory context: {memory_context} for {listener_npc}")
     
     knowledge_section = ""
     if 'knowledge' in characters:
@@ -184,23 +196,7 @@ def construct_memory_context(character_id, mem_manager : memory_manager.MemoryMa
     
 
 def add_system_prompt(data, game_state=None, mem_manager=None):
-    """Add the appropriate system prompt to the data based on the current NPC
-    
-    Args:
-        data: Dictionary containing 'prompt' key with player message
-        game_state: Optional game state dictionary. If None, uses default state
-    
-    Returns:
-        The constructed NPC prompt
-    """
-    # if game_state is None:
-    #     print("Game state is None")
-    #     game_state = {
-    #         'current_location': 'tavern',
-    #         'current_npc': 'blacksmith',
-    #         'inventory': []
-    #     }
-        
+    #Add the appropriate system prompt to the data based on the current NPC
     if 'current_speaker' in game_state:
         return construct_inter_npc_prompt(game_state['current_speaker'], data['prompt'], game_state, mem_manager)
     

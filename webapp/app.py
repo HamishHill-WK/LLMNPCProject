@@ -38,7 +38,7 @@ def game():
         player_input = request.form.get('player_input', '')
         response = f"You said: {player_input}"
         
-    return render_template('game.html', response=response, game_state=game_state)
+    return render_template('game.html', response=response, game_state=game_state, simulation_state=simulation_state)
 
 @app.route('/api/change_npc', methods=['POST'])
 def change_npc():
@@ -68,6 +68,9 @@ def change_simulation_npc():
         npc_id = data['npc_id']
         
         simulation_state[f"npc_{data['target_id']}"] = npc_id
+        
+        print(f"app sim npca: {simulation_state['npc_A']}")
+        print(f"app sim npcb: {simulation_state['npc_B']}")
         
         return jsonify({
             "game_state": game_state

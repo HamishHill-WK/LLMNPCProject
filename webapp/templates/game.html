@@ -27,27 +27,35 @@
                 </select>
             </p>
         </div>
-        <div id = "npc-simulation">           
-            <p>
-                <strong>NPC A:</strong>
-                <select id="npc-dropdown-A" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;" onchange="changeSimNPC(this.value, 'A')">
-                    {% for npc in game_state.all_characters %}
-                        <option value="{{ npc }}" {% if npc == game_state.current_npc %}selected{% endif %}>{{ npc }}</option>
-                    {% endfor %}
-                </select>
-            </p>
-            <p>
-                <strong>NPC B:</strong>
-                <select id="npc-dropdown-B" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;" onchange="changeSimNPC(this.value, 'B')">
-                    {% for npc in game_state.all_characters %}
-                        <option value="{{ npc }}" {% if npc == game_state.current_npc %}selected{% endif %}>{{ npc }}</option>
-                    {% endfor %}
-                </select>
-            </p>
-            <form id="input-form-npc">
-                <input type="text" id="simulation-input" placeholder="Enter your initial prompt" autocomplete="off">
-                <button type="submit">Simulate</button>
-            </form>
+        <div id = "npc-simulation">
+            <div id="simulation-title-section">
+                <h2 id="simulation-title">Simulate NPC Conversation</h2>
+                <p> Choose two NPCs and enter a prompt to simulate a conversation between them. The conversation will be generated in real-time.
+                    NPC A will respond to the prompt, then NPC B will respond to NPC A, and so on.
+                </p>
+            </div>
+            <div id="simulation-options">
+                <div id="simulation-dropdown-container">
+                    <strong>NPC A:</strong>
+                    <select id="npc-dropdown-A" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;" onchange="changeSimNPC(this.value, 'A')">
+                        {% for npc in game_state.all_characters %}
+                            <option value="{{ npc }}" {% if npc == simulation_state.npc_A  %}selected{% endif %}>{{ npc }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div id="simulation-dropdown-container-B">
+                    <strong>NPC B:</strong>
+                    <select id="npc-dropdown-B" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;" onchange="changeSimNPC(this.value, 'B')">
+                        {% for npc in game_state.all_characters %}
+                            <option value="{{ npc }}" {% if npc == simulation_state.npc_B  %}selected{% endif %}>{{ npc }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <form id="input-form-npc">
+                    <input type="text" id="simulation-input" placeholder="Enter your initial prompt" autocomplete="off">
+                    <button type="submit">Simulate</button>
+                </form>
+            </div>
         </div>
     </div>
     

@@ -25,8 +25,14 @@ body {
 }
 #input-form-npc {
     display: flex;
-    margin-top: 10px;
 }
+#simulation-input{
+    flex-grow: 1;
+    background-color: #333;
+    border: 1px solid #555;
+    padding: 8px;
+    color: #ccc;}
+
 #player-input {
     flex-grow: 1;
     background-color: #333;
@@ -44,6 +50,10 @@ body {
     background-color: #333;
     border: 1px solid #555;
     padding: 15px;
+}
+#simulation-title{
+    color: #d4e0d4;
+    margin-top: 0;
 }
 #npc-dropdown-A{
     background-color: #333;
