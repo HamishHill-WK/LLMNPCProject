@@ -2,11 +2,8 @@ from flask import Flask, render_template, request, jsonify, Response
 import webbrowser
 import os
 import prompt_engine as pe
-import requests
 import json
-import datetime
 import memory_manager
-import time 
 import ollama_manager as om
 import re
 app = Flask(__name__)
@@ -149,7 +146,7 @@ def api_interact():
       
         prompt = player_input.strip()
         data = {
-            "model": "deepseek-r1:7b",  # Match the Ollama model name
+            "model": "deepseek-r1:8b",  # Match the Ollama model name
             "prompt": prompt,
             "stream": False,
             "max_tokens" : 150

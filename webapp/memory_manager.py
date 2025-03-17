@@ -2,9 +2,10 @@
 import os
 import json 
 import re
+import datetime
 
 class MemoryManager:
-    def __init__(self, max_short_term=10):
+    def __init__(self, max_short_term=5):
         """Initialize memory manager with specified max short-term memories"""
         self.memories = {}
         self.max_short_term = max_short_term
@@ -31,7 +32,6 @@ class MemoryManager:
                 "short_term": [],
                 "long_term": []
             }
-            
         # Extract the chain of thought (content between <think> tags)
         chain_of_thought_match = re.search(r'<think>(.*?)</think>', character_response, re.DOTALL)
         chain_of_thought = chain_of_thought_match.group(1).strip() if chain_of_thought_match else ""
@@ -61,12 +61,12 @@ class MemoryManager:
         
         self.memories[character_id]["short_term"].append(memory_item)
         
-        # If short-term memory exceeds limit, move oldest to long-term memory
-        if len(self.memories[character_id]["short_term"]) > self.max_short_term:
-            # For now, just move the oldest memory directly to long-term
-            # In a more advanced system, you would summarize a batch of memories
-            oldest_memory = self.memories[character_id]["short_term"].pop(0)
-            self.memories[character_id]["long_term"].append(oldest_memory)
+        # # If short-term memory exceeds limit, move oldest to long-term memory
+        # if len(self.memories[character_id]["short_term"]) > self.max_short_term:
+        #     # For now, just move the oldest memory directly to long-term
+        #     # In a more advanced system, you would summarize a batch of memories
+        #     oldest_memory = self.memories[character_id]["short_term"].pop(0)
+        #     self.memories[character_id]["long_term"].append(oldest_memory)
         
         # Save updated memories
         self.save_memories()
@@ -82,13 +82,6 @@ class MemoryManager:
         for memory in self.memories[character_id]["short_term"]:
             memory_text.append(f"{memory['other_id']}: {memory['other_message']}")
             memory_text.append(f"{characters[character_id]['name']}: {memory['character_response']}")
-        
-        # Add long-term memories if they exist
-        # if self.memories[character_id]["long_term"]:
-        #     memory_text.append("\n--- OLDER MEMORIES ---")
-        #     for memory in self.memories[character_id]["long_term"][-3:]:  # Only include last 3 long-term memories
-        #         memory_text.append(f"Player: {memory['player_message']}")
-        #         memory_text.append(f"{characters[character_id]['name']}: {memory['character_response']}")
         
         return "\n".join(memory_text)
 

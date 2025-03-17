@@ -100,9 +100,10 @@ CURRENT SITUATION:
 
 The player says to you: "{player_input}"
 
-If the player asks a question or makes a request, you should respond in character based on the previous interactions and knowledge in the text provided above.\n
-Ask the player questions to move the conversation forward and to learn about them. Build on previous interactions and progress the conversation naturally.\n
-Respond in character as {character['name']}, using your established speech pattern and personality. Keep your response brief (1-3 sentences).\n
+If the player asks a question or makes a request, you should respond in character based on the previous interactions and knowledge in the text provided above.
+If the player says goodbye or otherwise ends the conversation, you should end the interaction naturally.
+Ask the player questions to move the conversation forward and to learn about them. Build on previous interactions and progress the conversation naturally.
+Respond in character as {character['name']}, using your established speech pattern and personality. Keep your response brief (1-3 sentences).
 Give your response in the following format:
 {character['name']} Dialogue output: "Character response here"
 Character Actions: Describe any actions or reactions here
@@ -134,8 +135,10 @@ def construct_inter_npc_prompt(speaker_id, speaker_input, simulation_state, mem_
             knowledge_section = str(character['knowledge'])
     
     # Construct the prompt
-    prompt = f"""You are roleplaying as {character['name']}, a character in a text adventure game.
+    prompt = f"""<system>You are roleplaying as {character['name']}, a character in a text adventure game.
+</system>
 
+<character_profile>
 CHARACTER TRAITS:
 - {', '.join(character['core_traits'])}
 
@@ -147,20 +150,38 @@ SPEECH PATTERN:
 
 KNOWLEDGE:
 {knowledge_section}
+</character_profile>
 
+<previous_interactions>
+{memory_context}
+</previous_interactions>
+
+<other_character_message>
+{speaker_npc}: {speaker_input}
+</other_character_message>
+
+<system>
 CURRENT SITUATION:
 - Location: {simulation_state['current_location']}
 
-If {speaker_npc} asks a question or makes a request, you should respond in character based on the previous interactions and knowledge in the text provided above.
-Respond in character as {character['name']}, using your established speech pattern and personality. Don't write more than a paragraph. Keep your response brief (1-10 sentences).\n
+You are currently interacting with {speaker_npc} in a text adventure game. The initial prompt was:
+{inital_prompt}
 
-PREVIOUS INTERACTIONS:
-{memory_context}
-{speaker_npc} said to you: "{speaker_input}"
-{character['name']} Dialogue output: Character response here
+If {speaker_npc} asks a question or makes a request, you should respond in character based on the previous interactions and knowledge appropriate to {character['name']}.
+Respond in character as {character['name']}, using your established speech pattern and personality. Don't write more than a paragraph.
+You can use <think> tags to write your thought process, which will not be part of your actual response.
+</system>
+
+<character_response>
+{character['name']}:
+</character_response>
 """
     
     return prompt
+
+def construct_memory_context(character_id, mem_manager : memory_manager.MemoryManager):
+    """Construct a memory context for a character based on memory data"""
+    
 
 def add_system_prompt(data, game_state=None, mem_manager=None):
     """Add the appropriate system prompt to the data based on the current NPC
@@ -187,7 +208,3 @@ def add_system_prompt(data, game_state=None, mem_manager=None):
     player_input = data['prompt']
     
     return construct_npc_prompt(character_id, player_input, game_state, mem_manager)
-
-# def record_interaction(character_id, player_message, character_response, game_state):
-#     """Record an interaction in the character's memory"""
-#     memory_manager.add_interaction(character_id, player_message, character_response, game_state)
