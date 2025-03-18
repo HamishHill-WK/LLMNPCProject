@@ -1,153 +1,437 @@
-import re
-import time
+# player_knowledge_engine.py
+# Knowledge extraction system for NPC memory management
 
-class knowledge_engine:
-    def __init__(self, character_id, knowledge_base):
-        self.character_id = character_id
-        self.knowledge_base = knowledge_base
-        self.information_categories = [
-            "personal_facts",        # Facts about the player character
-            "world_knowledge",       # Information about the game world
-            "opinions",              # Player's expressed opinions or preferences
-            "relationships",         # Information about other characters
-            "intentions",            # Player's stated goals or plans
-            "background"             # Player's history or backstory
-        ]
+import json
+import os
+import re
+import logging
+import time
+from datetime import datetime
+from typing import Dict, List, Any, Optional
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("PlayerKnowledgeEngine")
+
+# Information categories that can be extracted about the player
+KNOWLEDGE_CATEGORIES = [
+    "identity",        # Name, race, appearance, etc.
+    "background",      # Where they're from, their history
+    "abilities",       # Skills, powers, combat style
+    "possessions",     # Items, weapons, notable belongings
+    "goals",           # What they want to achieve
+    "relationships",   # Who they know, allies, enemies
+    "preferences",     # What they like/dislike
+    "knowledge"        # What information they possess
+]
+
+class KnowledgeEngine:
+    """System for extracting, categorizing and storing knowledge about the player from conversations"""
     
-    def extract_information(self, player_message, conversation_context):
-        """Extract potentially valuable information from player message"""
-        extraction_prompt = f"""
-        Analyze this message from the player: "{player_message}"
+    def __init__(self):
+        """Initialize the knowledge engine"""
+        self.knowledge_file = 'data/player_knowledge.json'
+        self.knowledge_base = self._load_knowledge_base()
         
-        Within the full conversation context:
-        {conversation_context}
+        # Create data directory if it doesn't exist
+        os.makedirs('data', exist_ok=True)
+    
+    def _load_knowledge_base(self) -> Dict[str, Any]:
+        """Load the knowledge base from disk or create a new one"""
+        if os.path.exists(self.knowledge_file):
+            try:
+                with open(self.knowledge_file, 'r') as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                logger.warning(f"Error decoding knowledge base file. Creating new one.")
         
-        Identify any NEW information the player has revealed about:
-        1. Personal facts (name, occupation, traits, abilities)
-        2. World knowledge (locations, events, facts about the game world)
-        3. Opinions (likes, dislikes, beliefs)
-        4. Relationships (connections to other characters)
-        5. Intentions (goals, plans, desires)
-        6. Background (history, backstory)
-        
-        For each piece of information identified:
-        - State the exact information
-        - Rate its confidence level (1-5)
-        - Explain why this information seems to be new
-        
-        If no new information is detected, respond with "No new information detected."
+        # Initialize empty knowledge base with structure for each NPC
+        return {
+            "global": {category: [] for category in KNOWLEDGE_CATEGORIES},
+            "npc_knowledge": {}
+        }
+    
+    def _save_knowledge_base(self):
+        """Save the knowledge base to disk"""
+        with open(self.knowledge_file, 'w') as f:
+            json.dump(self.knowledge_base, f, indent=2)
+    
+    def extract_player_knowledge(self, character_id: str, player_message: str, 
+                                conversation_context: str, data_dict: dict, ollama_service) -> Dict[str, Any]:
         """
+        Analyze player's message to extract knowledge about them
         
-        extraction_results = self.llm_service.generate_response(extraction_prompt)
-        return self._parse_extraction_results(extraction_results)
+        Args:
+            character_id: ID of the NPC who received the message
+            player_message: The player's message
+            conversation_context: Recent conversation history
+            data_dict: Dictionary containing model information
+            ollama_service: Service for generating LLM responses
+            
+        Returns:
+            Dictionary with extraction results
+        """
+        # Save original prompt
+        original_prompt = data_dict.get("prompt", "")
+        
+        # Create extraction prompt
+        extraction_prompt = self._create_extraction_prompt(player_message, conversation_context)
+        
+        # Use LLM to extract knowledge
+        data_dict["prompt"] = extraction_prompt
+        
+        try:
+            # Get response from LLM
+            extraction_result = ollama_service.get_response(data_dict, {}, None)
+            
+            # Restore original prompt
+            data_dict["prompt"] = original_prompt
+            
+            # Parse extraction result
+            extracted_items = self._parse_extraction_result(extraction_result)
+            
+            if not extracted_items:
+                return {"new_knowledge": False, "items": []}
+            
+            # Update knowledge base
+            self._update_knowledge_base(character_id, extracted_items)
+            
+            return {
+                "new_knowledge": True,
+                "items": extracted_items
+            }
+            
+        except Exception as e:
+            logger.error(f"Error extracting knowledge: {e}")
+            # Restore original prompt
+            data_dict["prompt"] = original_prompt
+            return {"new_knowledge": False, "error": str(e)}
     
-    def _parse_extraction_results(self, extraction_text):
-        """Parse the extraction results into structured data"""
-        if "No new information detected" in extraction_text:
+    def _create_extraction_prompt(self, player_message: str, conversation_context: str) -> str:
+        """Create a prompt for extracting player knowledge"""
+        categories_text = "\n".join([f"- {cat.title()}: Information about the player's {cat}" 
+                                  for cat in KNOWLEDGE_CATEGORIES])
+        
+        return f"""<s>
+You are analyzing a player's message in a role-playing game to extract any information the player reveals about their character.
+
+The player's message is: "{player_message}"
+
+Recent conversation context:
+{conversation_context[:300] if len(conversation_context) > 300 else conversation_context}
+
+Identify any explicit or strongly implied information about the player character in these categories:
+{categories_text}
+
+ONLY extract information that the player has clearly revealed about themselves. Do not make assumptions about information not directly stated or strongly implied.
+
+For each piece of information you identify:
+1. Specify which category it belongs to
+2. State the exact information as a clear, concise statement
+3. Rate your confidence (1-5 scale, where 1=uncertain, 5=certain)
+4. Include the exact quote or strong implication from the player's message
+
+Format your response as a JSON list where each item has these fields:
+- "category": one of the categories listed above
+- "information": the extracted information as a statement
+- "confidence": numeric value 1-5
+- "source": the specific part of the message that supports this
+
+If no information about the player is revealed, respond with "NO_PLAYER_INFORMATION".
+</s>"""
+    
+    def _parse_extraction_result(self, extraction_text: str) -> List[Dict[str, Any]]:
+        """Parse the extraction result from the LLM"""
+        # Check for no information response
+        if "NO_PLAYER_INFORMATION" in extraction_text:
             return []
         
-        # Parse the extraction results into structured data format
-        extracted_items = []
+        try:
+            # Try to find JSON in the response
+            json_match = re.search(r'(\[.*?\])', extraction_text, re.DOTALL)
+            if json_match:
+                json_text = json_match.group(1)
+                extracted_items = json.loads(json_text)
+                
+                # Validate and clean up items
+                valid_items = []
+                for item in extracted_items:
+                    if "category" in item and "information" in item:
+                        # Normalize category name
+                        category = item["category"].lower()
+                        if category not in KNOWLEDGE_CATEGORIES:
+                            # Default to most appropriate category
+                            if "name" in item["information"].lower():
+                                category = "identity"
+                            else:
+                                category = "knowledge"
+                        
+                        # Ensure confidence is valid
+                        if "confidence" not in item or not isinstance(item["confidence"], int):
+                            item["confidence"] = 3  # Default medium confidence
+                        else:
+                            item["confidence"] = max(1, min(5, item["confidence"]))
+                        
+                        # Add normalized item
+                        valid_items.append({
+                            "category": category,
+                            "information": item["information"],
+                            "confidence": item["confidence"],
+                            "source": item.get("source", "Implied from conversation"),
+                            "timestamp": time.time()
+                        })
+                
+                return valid_items
+            
+            # If no JSON found, try to parse text format
+            return self._parse_text_extraction(extraction_text)
+            
+        except json.JSONDecodeError:
+            logger.warning(f"Failed to parse JSON from extraction result")
+            return self._parse_text_extraction(extraction_text)
         
-        # Split the text by numbered entries (1., 2., etc.)
-        sections = re.split(r'\d+\.', extraction_text)[1:] if re.search(r'\d+\.', extraction_text) else []
+        except Exception as e:
+            logger.error(f"Error parsing extraction result: {e}")
+            return []
+    
+    def _parse_text_extraction(self, text: str) -> List[Dict[str, Any]]:
+        """Parse non-JSON extraction result"""
+        items = []
+        lines = text.split('\n')
+        current_item = {}
         
-        for section in sections:
-            # Try to identify the category
-            category = None
-            for cat in self.information_categories:
-                if cat.replace("_", " ") in section.lower():
-                    category = cat
-                    break
-                
-                # If no category found, try to determine from content
-                if not category:
-                    if any(term in section.lower() for term in ["name", "occupation", "trait", "ability", "skill"]):
-                        category = "personal_facts"
-                    elif any(term in section.lower() for term in ["location", "place", "world", "event"]):
-                        category = "world_knowledge"
-                    elif any(term in section.lower() for term in ["like", "dislike", "believe", "opinion", "feel"]):
-                        category = "opinions"
-                    elif any(term in section.lower() for term in ["friend", "enemy", "relationship", "connection"]):
-                        category = "relationships"
-                    elif any(term in section.lower() for term in ["goal", "plan", "desire", "intention", "want"]):
-                        category = "intentions"
-                    elif any(term in section.lower() for term in ["history", "background", "past", "backstory"]):
-                        category = "background"
-                    else:
-                        category = "personal_facts"  # Default if we can't determine
-                
-                # Extract confidence level (1-5)
-                confidence_match = re.search(r'confidence:?\s*(\d+)', section.lower())
-                confidence = int(confidence_match.group(1)) if confidence_match else 3  # Default confidence
-                
-                # Extract the information and reasoning
-                information = None
-                reasoning = None
-                
-                lines = [line.strip() for line in section.split('\n') if line.strip()]
-                if lines:
-                    # First line or text before confidence is typically the information
-                    information = lines[0].split("confidence")[0].strip() if "confidence" in lines[0].lower() else lines[0]
-                
-                # Look for reasoning after information
-                reasoning_parts = [line for line in lines[1:] if "why" in line.lower() or "because" in line.lower()]
-                reasoning = " ".join(reasoning_parts) if reasoning_parts else "Extracted from player message"
-                
-                if information:
-                    extracted_items.append({
-                        "category": category,
-                        "information": information,
-                        "confidence": confidence,
-                        "reasoning": reasoning
-                    })
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            
+            # Look for category indicators
+            for category in KNOWLEDGE_CATEGORIES:
+                category_title = category.title()
+                if line.startswith(f"{category_title}:") or line.startswith(f"- {category_title}:"):
+                    # Save previous item if exists
+                    if current_item and "category" in current_item and "information" in current_item:
+                        items.append(current_item)
                     
-            return extracted_items
+                    # Start new item
+                    current_item = {"category": category, "confidence": 3, "timestamp": time.time()}
+                    
+                    # Extract information after the category
+                    parts = line.split(':', 1)
+                    if len(parts) > 1:
+                        current_item["information"] = parts[1].strip()
+                    break
+            
+            # Look for confidence indicators
+            if "confidence" in line.lower() and ":" in line and current_item:
+                try:
+                    confidence_value = int(''.join(filter(str.isdigit, line.split(':', 1)[1])))
+                    current_item["confidence"] = max(1, min(5, confidence_value))
+                except ValueError:
+                    pass
+            
+            # Look for source
+            if "source" in line.lower() and ":" in line and current_item:
+                current_item["source"] = line.split(':', 1)[1].strip()
         
-    def evaluate_importance(self, extracted_items, character_profile):
-        """Determine which extracted information is worth remembering"""
-        if not extracted_items:
-            return []
+        # Add the last item
+        if current_item and "category" in current_item and "information" in current_item:
+            items.append(current_item)
         
-        # Format the extracted items for evaluation
-        items_text = "\n".join([f"- {item['category'].upper()}: {item['information']} (Confidence: {item['confidence']})" 
-                               for item in extracted_items])
-        
-        evaluation_prompt = f"""
-        As {self.character_id}, evaluate which of these pieces of information are worth remembering:
-        
-        {items_text}
-        
-        Consider:
-        1. Relevance to your interests and goals: {', '.join(character_profile['goals'])}
-        2. Potential future utility in conversations
-        3. Alignment with your personality and what you would care about
-        4. Confidence level in the information's accuracy
-        
-        For each item, decide:
-        - REMEMBER: Definitely worth adding to long-term memory
-        - MAYBE: Possibly worth remembering if it comes up again
-        - IGNORE: Not relevant or useful to you
-        
-        Explain your reasoning for each decision.
-        """
-        
-        evaluation_results = self.llm_service.generate_response(evaluation_prompt)
-        return self._parse_evaluation_results(evaluation_results, extracted_items)
+        return items
     
-    def update_knowledge_base(self, important_items):
-        """Add important information to the character's knowledge base"""
-        for item in important_items:
-            if item['decision'] == 'REMEMBER':
-                # Add to knowledge base with metadata
-                self.knowledge_base.add_knowledge(
-                    category=item['category'],
-                    information=item['information'],
-                    source="player_statement",
-                    confidence=item['confidence'],
-                    timestamp=time.time(),
-                    context=item.get('context', '')
-                )
+    def _update_knowledge_base(self, character_id: str, extracted_items: List[Dict[str, Any]]):
+        """Update the knowledge base with new information"""
+        # Initialize NPC's knowledge if not exists
+        if "npc_knowledge" not in self.knowledge_base:
+            self.knowledge_base["npc_knowledge"] = {}
         
-        # Return summary of updates
-        return f"Added {len([i for i in important_items if i['decision'] == 'REMEMBER'])} new items to knowledge base"
+        if character_id not in self.knowledge_base["npc_knowledge"]:
+            self.knowledge_base["npc_knowledge"][character_id] = {
+                category: [] for category in KNOWLEDGE_CATEGORIES
+            }
+        
+        # Process each extracted item
+        for item in extracted_items:
+            category = item["category"]
+            info = item["information"]
+            confidence = item["confidence"]
+            source = item.get("source", "Unknown")
+            
+            # Add to global knowledge (with higher confidence)
+            self._add_to_global_knowledge(category, info, confidence, source)
+            
+            # Add to character's knowledge
+            self._add_to_character_knowledge(character_id, category, info, confidence, source)
+        
+        # Save updated knowledge base
+        self._save_knowledge_base()
+    
+    def _add_to_global_knowledge(self, category: str, info: str, confidence: int, source: str):
+        """Add information to global knowledge"""
+        if category not in self.knowledge_base["global"]:
+            self.knowledge_base["global"][category] = []
+        
+        # Check if similar information exists
+        is_new = True
+        for existing in self.knowledge_base["global"][category]:
+            if self._is_similar_information(existing["information"], info):
+                # Update if new information has higher confidence
+                if confidence > existing["confidence"]:
+                    existing["information"] = info
+                    existing["confidence"] = confidence
+                    existing["last_updated"] = time.time()
+                    existing["sources"].append(source)
+                is_new = False
+                break
+        
+        # Add new information
+        if is_new:
+            self.knowledge_base["global"][category].append({
+                "information": info,
+                "confidence": confidence,
+                "first_learned": time.time(),
+                "last_updated": time.time(),
+                "sources": [source]
+            })
+    
+    def _add_to_character_knowledge(self, character_id: str, category: str, info: str, confidence: int, source: str):
+        """Add information to character's knowledge"""
+        if category not in self.knowledge_base["npc_knowledge"][character_id]:
+            self.knowledge_base["npc_knowledge"][character_id][category] = []
+        
+        # Check if similar information exists
+        is_new = True
+        for existing in self.knowledge_base["npc_knowledge"][character_id][category]:
+            if self._is_similar_information(existing["information"], info):
+                # Update if new information has higher confidence
+                if confidence > existing["confidence"]:
+                    existing["information"] = info
+                    existing["confidence"] = confidence
+                    existing["last_updated"] = time.time()
+                is_new = False
+                break
+        
+        # Add new information
+        if is_new:
+            self.knowledge_base["npc_knowledge"][character_id][category].append({
+                "information": info,
+                "confidence": confidence,
+                "first_learned": time.time(),
+                "last_updated": time.time()
+            })
+    
+    def _is_similar_information(self, info1: str, info2: str) -> bool:
+        """Check if two pieces of information are similar"""
+        # Simple similarity check
+        info1_norm = info1.lower().strip()
+        info2_norm = info2.lower().strip()
+        
+        # Direct match
+        if info1_norm == info2_norm:
+            return True
+        
+        # One contains the other
+        if info1_norm in info2_norm or info2_norm in info1_norm:
+            return True
+        
+        return False
+    
+    def get_character_knowledge_about_player(self, character_id: str) -> Dict[str, List[str]]:
+        """Get what a character knows about the player, formatted for prompts"""
+        result = {}
+        
+        # Check if character has knowledge
+        if "npc_knowledge" not in self.knowledge_base or \
+           character_id not in self.knowledge_base["npc_knowledge"]:
+            return result
+        
+        # Get character's knowledge
+        for category, items in self.knowledge_base["npc_knowledge"][character_id].items():
+            if not items:
+                continue
+            
+            result[category] = []
+            
+            for item in items:
+                # Format based on confidence
+                knowledge_text = item["information"]
+                if item["confidence"] < 3:
+                    knowledge_text += " (not entirely certain)"
+                
+                result[category].append(knowledge_text)
+        
+        return result
+    
+    def format_player_knowledge(self, character_id: str) -> str:
+        """Format player knowledge for inclusion in prompts"""
+        knowledge = self.get_character_knowledge_about_player(character_id)
+        
+        if not knowledge:
+            return "You don't know much about the player yet."
+        
+        # Format as sections by category
+        sections = []
+        
+        for category, items in knowledge.items():
+            if not items:
+                continue
+            
+            category_title = category.title()
+            section = f"{category_title}:\n"
+            
+            for item in items:
+                section += f"- {item}\n"
+            
+            sections.append(section)
+        
+        return "\n".join(sections)
+
+
+# Function to use in prompt_engine.py
+def assess_player_knowledge(player_input: str, character_id: str, 
+                           conversation_context: str, data_dict: dict, 
+                           ollama_service) -> Dict[str, Any]:
+    """
+    Assess whether player input contains new knowledge
+    
+    Args:
+        player_input: The player's message
+        character_id: ID of the NPC receiving the message
+        conversation_context: Recent conversation context
+        data_dict: Dictionary containing model information
+        ollama_service: Service for generating LLM responses
+        
+    Returns:
+        Dictionary with assessment results
+    """
+    # Initialize knowledge engine if needed (singleton pattern)
+    if not hasattr(assess_player_knowledge, "_engine"):
+        assess_player_knowledge._engine = KnowledgeEngine()
+    
+    # Process the player input
+    return assess_player_knowledge._engine.extract_player_knowledge(
+        character_id=character_id,
+        player_message=player_input,
+        conversation_context=conversation_context,
+        data_dict=data_dict,
+        ollama_service=ollama_service
+    )
+
+
+def get_player_knowledge(character_id: str) -> str:
+    """
+    Get formatted knowledge about player for a character
+    
+    Args:
+        character_id: ID of the NPC
+        
+    Returns:
+        Formatted string of knowledge for inclusion in prompts
+    """
+    # Initialize knowledge engine if needed
+    if not hasattr(assess_player_knowledge, "_engine"):
+        assess_player_knowledge._engine = KnowledgeEngine()
+    
+    # Get formatted knowledge
+    return assess_player_knowledge._engine.format_player_knowledge(character_id)
