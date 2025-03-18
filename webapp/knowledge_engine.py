@@ -1,5 +1,5 @@
-# player_knowledge_engine.py
-# Knowledge extraction system for NPC memory management
+# knowledge_engine.py
+# Comprehensive knowledge extraction system for NPC memory management
 
 import json
 import os
@@ -7,30 +7,105 @@ import re
 import logging
 import time
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger("PlayerKnowledgeEngine")
+logger = logging.getLogger("KnowledgeEngine")
 
-# Information categories that can be extracted about the player
-KNOWLEDGE_CATEGORIES = [
-    "identity",        # Name, race, appearance, etc.
-    "background",      # Where they're from, their history
-    "abilities",       # Skills, powers, combat style
-    "possessions",     # Items, weapons, notable belongings
-    "goals",           # What they want to achieve
-    "relationships",   # Who they know, allies, enemies
-    "preferences",     # What they like/dislike
-    "knowledge"        # What information they possess
+# Information entity types
+ENTITY_TYPES = [
+    "player",        # Information about the player character
+    "npc",           # Information about NPCs
+    "location",      # Information about places
+    "event",         # Information about events that happened
+    "item",          # Information about objects, weapons, artifacts
+    "faction",       # Information about groups, organizations
+    "lore",          # General world knowledge and history
+    "quest"          # Information about missions and objectives
 ]
 
+# Information categories for each entity type
+ENTITY_CATEGORIES = {
+    "player": [
+        "identity",      # Name, race, appearance, etc.
+        "background",    # Where they're from, their history
+        "abilities",     # Skills, powers, combat style
+        "possessions",   # Items, weapons, notable belongings
+        "goals",         # What they want to achieve
+        "relationships", # Who they know, allies, enemies
+        "preferences",   # What they like/dislike
+        "knowledge"      # What information they possess
+    ],
+    "npc": [
+        "identity",      # Name, title, appearance
+        "location",      # Where they are/live
+        "relationship",  # Relation to other characters
+        "behavior",      # How they act, personality
+        "knowledge",     # What they know
+        "background",    # Their history, origin
+        "abilities"      # Skills, powers they possess
+    ],
+    "location": [
+        "description",   # What it looks like
+        "inhabitants",   # Who/what lives there
+        "dangers",       # Threats present there
+        "resources",     # What can be found/harvested there
+        "accessibility", # How to reach it, barriers
+        "history",       # Past events that occurred there
+        "atmosphere"     # The mood, weather, feel of the place
+    ],
+    "event": [
+        "participants",  # Who was involved
+        "outcome",       # What happened as a result
+        "timeframe",     # When it happened
+        "location",      # Where it happened
+        "cause",         # Why it happened
+        "significance"   # Why it matters
+    ],
+    "item": [
+        "description",   # What it looks like
+        "properties",    # Special abilities, features
+        "origin",        # Where it came from
+        "value",         # Worth or importance
+        "ownership",     # Who possesses it
+        "effects"        # What it does when used
+    ],
+    "faction": [
+        "members",       # Who belongs to it
+        "goals",         # What they want
+        "territory",     # Where they operate
+        "relationships", # Allies, enemies
+        "resources",     # What they control
+        "history",       # How they formed
+        "reputation"     # How others view them
+    ],
+    "lore": [
+        "historical",    # Past events
+        "cultural",      # Customs, traditions
+        "magical",       # Arcane knowledge
+        "religious",     # Deities, beliefs
+        "geographical",  # World features
+        "political",     # Power structures
+        "technological"  # Inventions, techniques
+    ],
+    "quest": [
+        "objective",     # What needs to be done
+        "giver",         # Who assigned it
+        "rewards",       # What you get for completing it
+        "location",      # Where it takes place
+        "requirements",  # What's needed to complete it
+        "obstacles",     # What makes it challenging
+        "status"         # Current state of the quest
+    ]
+}
+
 class KnowledgeEngine:
-    """System for extracting, categorizing and storing knowledge about the player from conversations"""
+    """System for extracting, categorizing and storing knowledge from conversations"""
     
     def __init__(self):
         """Initialize the knowledge engine"""
-        self.knowledge_file = 'data/player_knowledge.json'
+        self.knowledge_file = 'data/game_knowledge.json'
         self.knowledge_base = self._load_knowledge_base()
         
         # Create data directory if it doesn't exist
@@ -45,21 +120,30 @@ class KnowledgeEngine:
             except json.JSONDecodeError:
                 logger.warning(f"Error decoding knowledge base file. Creating new one.")
         
-        # Initialize empty knowledge base with structure for each NPC
-        return {
-            "global": {category: [] for category in KNOWLEDGE_CATEGORIES},
-            "npc_knowledge": {}
+        # Initialize empty knowledge base
+        knowledge_base = {
+            "global": {},  # Shared knowledge across all NPCs
+            "npc_knowledge": {},  # Knowledge specific to each NPC
         }
+        
+        # Initialize global categories for each entity type
+        for entity_type in ENTITY_TYPES:
+            knowledge_base["global"][entity_type] = {}
+            for category in ENTITY_CATEGORIES[entity_type]:
+                knowledge_base["global"][entity_type][category] = []
+        
+        return knowledge_base
     
     def _save_knowledge_base(self):
         """Save the knowledge base to disk"""
+        print(f"Saving knowledge base to {self.knowledge_file}")
         with open(self.knowledge_file, 'w') as f:
             json.dump(self.knowledge_base, f, indent=2)
     
-    def extract_player_knowledge(self, character_id: str, player_message: str, 
-                                conversation_context: str, data_dict: dict, ollama_service) -> Dict[str, Any]:
+    def extract_knowledge(self, character_id: str, player_message: str, 
+                         conversation_context: str, data_dict: dict, ollama_service) -> Dict[str, Any]:
         """
-        Analyze player's message to extract knowledge about them
+        Analyze conversation to extract knowledge about various entities
         
         Args:
             character_id: ID of the NPC who received the message
@@ -77,18 +161,102 @@ class KnowledgeEngine:
         # Create extraction prompt
         extraction_prompt = self._create_extraction_prompt(player_message, conversation_context)
         
+        
+        # Save extraction prompt to a text file
+        try:
+            # Create extraction_prompts directory if it doesn't exist
+            prompts_dir = 'data/extraction_prompts'
+            os.makedirs(prompts_dir, exist_ok=True)
+            
+            # Create filename with timestamp and character ID
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{prompts_dir}/prompt_{character_id}_{timestamp}.txt"
+            
+            # Write prompt to file
+            with open(filename, 'w') as f:
+                f.write(f"Character ID: {character_id}\n")
+                f.write(f"Player message: {player_message}\n")
+                f.write(f"Timestamp: {datetime.now().isoformat()}\n")
+                f.write("-" * 50 + "\n")
+                f.write(extraction_prompt)
+            
+            logger.info(f"Saved extraction prompt to {filename}")
+        except Exception as e:
+            logger.error(f"Failed to save extraction prompt: {e}")
         # Use LLM to extract knowledge
         data_dict["prompt"] = extraction_prompt
         
+        # Debug: Save data_dict to file for inspection
+        try:
+            # Create debug directory if it doesn't exist
+            debug_dir = 'data/debug'
+            os.makedirs(debug_dir, exist_ok=True)
+            
+            # Create filename with timestamp and character ID
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{debug_dir}/data_dict_{character_id}_{timestamp}.json"
+            
+            # Write data_dict to file
+            with open(filename, 'w') as f:
+                json.dump(data_dict, f, indent=2, default=str)
+            
+            logger.info(f"Saved data_dict to {filename}")
+        except Exception as e:
+            logger.error(f"Failed to save data_dict: {e}")
+        minimal_game_state = {
+            "current_npc": character_id,
+            "current_location": "unknown",
+            "all_characters": {}
+        }
         try:
             # Get response from LLM
-            extraction_result = ollama_service.get_response(data_dict, {}, None)
+            extraction_result = ollama_service.get_response(data_dict, minimal_game_state, None)
             
             # Restore original prompt
             data_dict["prompt"] = original_prompt
             
+            # Save extraction result to a text file
+            try:
+                # Create extraction_results directory if it doesn't exist
+                extraction_dir = 'data/extraction_results'
+                os.makedirs(extraction_dir, exist_ok=True)
+                
+                # Create filename with timestamp and character ID
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"{extraction_dir}/extraction_{character_id}_{timestamp}.txt"
+                
+                # Write result to file
+                with open(filename, 'w') as f:
+                    f.write(f"Character ID: {character_id}\n")
+                    f.write(f"Player message: {player_message}\n")
+                    f.write(f"Timestamp: {datetime.now().isoformat()}\n")
+                    f.write("-" * 50 + "\n")
+                    f.write(extraction_result)
+                
+                logger.info(f"Saved extraction result to {filename}")
+            except Exception as e:
+                logger.error(f"Failed to save extraction result: {e}")
+            
             # Parse extraction result
             extracted_items = self._parse_extraction_result(extraction_result)
+            
+            # Save parsed extracted items to file
+            try:
+                # Create extraction_results directory if it doesn't exist
+                extraction_dir = 'data/extraction_results'
+                os.makedirs(extraction_dir, exist_ok=True)
+                
+                # Create filename with timestamp and character ID
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"{extraction_dir}/items_{character_id}_{timestamp}.json"
+                
+                # Write extracted items to file
+                with open(filename, 'w') as f:
+                    json.dump(extracted_items, f, indent=2)
+                
+                logger.info(f"Saved {len(extracted_items)} extracted items to {filename}")
+            except Exception as e:
+                logger.error(f"Failed to save extracted items: {e}")
             
             if not extracted_items:
                 return {"new_knowledge": False, "items": []}
@@ -108,42 +276,50 @@ class KnowledgeEngine:
             return {"new_knowledge": False, "error": str(e)}
     
     def _create_extraction_prompt(self, player_message: str, conversation_context: str) -> str:
-        """Create a prompt for extracting player knowledge"""
-        categories_text = "\n".join([f"- {cat.title()}: Information about the player's {cat}" 
-                                  for cat in KNOWLEDGE_CATEGORIES])
+        """Create a prompt for extracting knowledge"""
+        # Build a multi-level list of entity types and their categories
+        entity_categories_text = ""
+        for entity_type in ENTITY_TYPES:
+            entity_categories_text += f"- {entity_type.upper()}:\n"
+            for category in ENTITY_CATEGORIES[entity_type]:
+                entity_categories_text += f"  - {category}: Information about {entity_type}'s {category}\n"
         
         return f"""<s>
-You are analyzing a player's message in a role-playing game to extract any information the player reveals about their character.
+You are analyzing a conversation in a role-playing game to extract knowledge about various entities in the game world.
 
 The player's message is: "{player_message}"
 
 Recent conversation context:
 {conversation_context[:300] if len(conversation_context) > 300 else conversation_context}
 
-Identify any explicit or strongly implied information about the player character in these categories:
-{categories_text}
+Your task is to identify any explicit or strongly implied information about the following types of entities:
+{entity_categories_text}
 
-ONLY extract information that the player has clearly revealed about themselves. Do not make assumptions about information not directly stated or strongly implied.
+ONLY extract information that has been clearly revealed. Do not make assumptions about information not directly stated or strongly implied.
 
 For each piece of information you identify:
-1. Specify which category it belongs to
-2. State the exact information as a clear, concise statement
-3. Rate your confidence (1-5 scale, where 1=uncertain, 5=certain)
-4. Include the exact quote or strong implication from the player's message
+1. Specify the entity type (player, npc, location, etc.)
+2. Specify which category it belongs to within that entity type
+3. Identify the specific entity being described (name of character, place, etc.)
+4. State the exact information as a clear, concise statement
+5. Rate your confidence (1-5 scale, where 1=uncertain, 5=certain)
+6. Include the exact quote or strong implication from the message
 
 Format your response as a JSON list where each item has these fields:
-- "category": one of the categories listed above
+- "entity_type": one of the entity types listed above
+- "category": the appropriate category for this entity type
+- "entity_name": the specific entity being described (e.g., "Bob", "Northern Kingdom", "Royal Guards")
 - "information": the extracted information as a statement
 - "confidence": numeric value 1-5
 - "source": the specific part of the message that supports this
 
-If no information about the player is revealed, respond with "NO_PLAYER_INFORMATION".
+If no relevant information is revealed, respond with "NO_NEW_INFORMATION".
 </s>"""
     
     def _parse_extraction_result(self, extraction_text: str) -> List[Dict[str, Any]]:
         """Parse the extraction result from the LLM"""
         # Check for no information response
-        if "NO_PLAYER_INFORMATION" in extraction_text:
+        if "NO_NEW_INFORMATION" in extraction_text:
             return []
         
         try:
@@ -156,30 +332,53 @@ If no information about the player is revealed, respond with "NO_PLAYER_INFORMAT
                 # Validate and clean up items
                 valid_items = []
                 for item in extracted_items:
-                    if "category" in item and "information" in item:
-                        # Normalize category name
-                        category = item["category"].lower()
-                        if category not in KNOWLEDGE_CATEGORIES:
-                            # Default to most appropriate category
-                            if "name" in item["information"].lower():
-                                category = "identity"
-                            else:
-                                category = "knowledge"
-                        
-                        # Ensure confidence is valid
-                        if "confidence" not in item or not isinstance(item["confidence"], int):
-                            item["confidence"] = 3  # Default medium confidence
+                    # Skip if missing required fields
+                    if not all(key in item for key in ["entity_type", "category", "entity_name", "information"]):
+                        continue
+                    
+                    # Normalize entity type
+                    entity_type = item["entity_type"].lower()
+                    if entity_type not in ENTITY_TYPES:
+                        # Try to find the closest match
+                        if "player" in entity_type:
+                            entity_type = "player"
+                        elif "npc" in entity_type or "character" in entity_type:
+                            entity_type = "npc"
+                        elif "place" in entity_type or "area" in entity_type:
+                            entity_type = "location"
                         else:
-                            item["confidence"] = max(1, min(5, item["confidence"]))
-                        
-                        # Add normalized item
-                        valid_items.append({
-                            "category": category,
-                            "information": item["information"],
-                            "confidence": item["confidence"],
-                            "source": item.get("source", "Implied from conversation"),
-                            "timestamp": time.time()
-                        })
+                            entity_type = "lore"  # Default to lore
+                    
+                    # Normalize category
+                    category = item["category"].lower()
+                    if category not in ENTITY_CATEGORIES.get(entity_type, []):
+                        # Try to find the closest match or use default
+                        if entity_type == "player" and "name" in category:
+                            category = "identity"
+                        elif entity_type == "npc" and "name" in category:
+                            category = "identity"
+                        elif entity_type == "location" and "look" in category:
+                            category = "description"
+                        else:
+                            # Use the first category as default
+                            category = ENTITY_CATEGORIES[entity_type][0]
+                    
+                    # Ensure confidence is valid
+                    if "confidence" not in item or not isinstance(item["confidence"], int):
+                        item["confidence"] = 3  # Default medium confidence
+                    else:
+                        item["confidence"] = max(1, min(5, item["confidence"]))
+                    
+                    # Add normalized item
+                    valid_items.append({
+                        "entity_type": entity_type,
+                        "category": category,
+                        "entity_name": item["entity_name"],
+                        "information": item["information"],
+                        "confidence": item["confidence"],
+                        "source": item.get("source", "Implied from conversation"),
+                        "timestamp": time.time()
+                    })
                 
                 return valid_items
             
@@ -198,6 +397,14 @@ If no information about the player is revealed, respond with "NO_PLAYER_INFORMAT
         """Parse non-JSON extraction result"""
         items = []
         lines = text.split('\n')
+        
+        # Patterns to look for
+        entity_pattern = re.compile(r'(player|npc|location|event|item|faction|lore|quest)', re.IGNORECASE)
+        category_pattern = re.compile(r'category:?\s*([a-z]+)', re.IGNORECASE)
+        entity_name_pattern = re.compile(r'entity:?\s*([^:]+)', re.IGNORECASE)
+        information_pattern = re.compile(r'information:?\s*([^:]+)', re.IGNORECASE)
+        confidence_pattern = re.compile(r'confidence:?\s*(\d)', re.IGNORECASE)
+        
         current_item = {}
         
         for line in lines:
@@ -205,37 +412,47 @@ If no information about the player is revealed, respond with "NO_PLAYER_INFORMAT
             if not line:
                 continue
             
-            # Look for category indicators
-            for category in KNOWLEDGE_CATEGORIES:
-                category_title = category.title()
-                if line.startswith(f"{category_title}:") or line.startswith(f"- {category_title}:"):
-                    # Save previous item if exists
-                    if current_item and "category" in current_item and "information" in current_item:
-                        items.append(current_item)
-                    
-                    # Start new item
-                    current_item = {"category": category, "confidence": 3, "timestamp": time.time()}
-                    
-                    # Extract information after the category
-                    parts = line.split(':', 1)
-                    if len(parts) > 1:
-                        current_item["information"] = parts[1].strip()
-                    break
-            
-            # Look for confidence indicators
-            if "confidence" in line.lower() and ":" in line and current_item:
-                try:
-                    confidence_value = int(''.join(filter(str.isdigit, line.split(':', 1)[1])))
-                    current_item["confidence"] = max(1, min(5, confidence_value))
-                except ValueError:
-                    pass
-            
-            # Look for source
-            if "source" in line.lower() and ":" in line and current_item:
-                current_item["source"] = line.split(':', 1)[1].strip()
+            # Check for start of new item
+            entity_match = entity_pattern.search(line)
+            if entity_match and ("entity type" in line.lower() or line.lower().startswith(entity_match.group(1).lower())):
+                # Save previous item if exists
+                if current_item and "entity_type" in current_item and "information" in current_item:
+                    items.append(current_item)
+                
+                # Start new item
+                current_item = {
+                    "entity_type": entity_match.group(1).lower(),
+                    "confidence": 3,
+                    "timestamp": time.time()
+                }
+                continue
+                
+            # Check for category
+            category_match = category_pattern.search(line)
+            if category_match and current_item:
+                current_item["category"] = category_match.group(1).lower()
+                
+            # Check for entity name
+            entity_name_match = entity_name_pattern.search(line)
+            if entity_name_match and current_item:
+                current_item["entity_name"] = entity_name_match.group(1).strip()
+                
+            # Check for information
+            information_match = information_pattern.search(line)
+            if information_match and current_item:
+                current_item["information"] = information_match.group(1).strip()
+                
+            # Check for confidence
+            confidence_match = confidence_pattern.search(line)
+            if confidence_match and current_item:
+                current_item["confidence"] = int(confidence_match.group(1))
+                
+            # Check for source
+            if "source:" in line.lower() and current_item:
+                current_item["source"] = line.split(":", 1)[1].strip()
         
         # Add the last item
-        if current_item and "category" in current_item and "information" in current_item:
+        if current_item and "entity_type" in current_item and "entity_name" in current_item and "information" in current_item:
             items.append(current_item)
         
         return items
@@ -247,47 +464,59 @@ If no information about the player is revealed, respond with "NO_PLAYER_INFORMAT
             self.knowledge_base["npc_knowledge"] = {}
         
         if character_id not in self.knowledge_base["npc_knowledge"]:
-            self.knowledge_base["npc_knowledge"][character_id] = {
-                category: [] for category in KNOWLEDGE_CATEGORIES
-            }
+            self.knowledge_base["npc_knowledge"][character_id] = {}
+            for entity_type in ENTITY_TYPES:
+                self.knowledge_base["npc_knowledge"][character_id][entity_type] = {}
+                for category in ENTITY_CATEGORIES[entity_type]:
+                    self.knowledge_base["npc_knowledge"][character_id][entity_type][category] = []
         
         # Process each extracted item
         for item in extracted_items:
+            entity_type = item["entity_type"]
             category = item["category"]
+            entity_name = item["entity_name"]
             info = item["information"]
             confidence = item["confidence"]
             source = item.get("source", "Unknown")
             
-            # Add to global knowledge (with higher confidence)
-            self._add_to_global_knowledge(category, info, confidence, source)
+            # Add to global knowledge
+            self._add_to_global_knowledge(entity_type, category, entity_name, info, confidence, source)
             
             # Add to character's knowledge
-            self._add_to_character_knowledge(character_id, category, info, confidence, source)
+            self._add_to_character_knowledge(character_id, entity_type, category, entity_name, info, confidence, source)
         
         # Save updated knowledge base
         self._save_knowledge_base()
     
-    def _add_to_global_knowledge(self, category: str, info: str, confidence: int, source: str):
+    def _add_to_global_knowledge(self, entity_type: str, category: str, entity_name: str, 
+                               info: str, confidence: int, source: str):
         """Add information to global knowledge"""
-        if category not in self.knowledge_base["global"]:
-            self.knowledge_base["global"][category] = []
+        # Ensure the entity type and category exist
+        if entity_type not in self.knowledge_base["global"]:
+            self.knowledge_base["global"][entity_type] = {}
         
-        # Check if similar information exists
+        if category not in self.knowledge_base["global"][entity_type]:
+            self.knowledge_base["global"][entity_type][category] = []
+        
+        # Check if similar information exists for this entity
         is_new = True
-        for existing in self.knowledge_base["global"][category]:
-            if self._is_similar_information(existing["information"], info):
+        for existing in self.knowledge_base["global"][entity_type][category]:
+            if existing.get("entity_name") == entity_name and self._is_similar_information(existing["information"], info):
                 # Update if new information has higher confidence
                 if confidence > existing["confidence"]:
                     existing["information"] = info
                     existing["confidence"] = confidence
                     existing["last_updated"] = time.time()
+                    if "sources" not in existing:
+                        existing["sources"] = []
                     existing["sources"].append(source)
                 is_new = False
                 break
         
         # Add new information
         if is_new:
-            self.knowledge_base["global"][category].append({
+            self.knowledge_base["global"][entity_type][category].append({
+                "entity_name": entity_name,
                 "information": info,
                 "confidence": confidence,
                 "first_learned": time.time(),
@@ -295,15 +524,20 @@ If no information about the player is revealed, respond with "NO_PLAYER_INFORMAT
                 "sources": [source]
             })
     
-    def _add_to_character_knowledge(self, character_id: str, category: str, info: str, confidence: int, source: str):
+    def _add_to_character_knowledge(self, character_id: str, entity_type: str, category: str, 
+                                   entity_name: str, info: str, confidence: int, source: str):
         """Add information to character's knowledge"""
-        if category not in self.knowledge_base["npc_knowledge"][character_id]:
-            self.knowledge_base["npc_knowledge"][character_id][category] = []
+        # Ensure the entity type and category exist
+        if entity_type not in self.knowledge_base["npc_knowledge"][character_id]:
+            self.knowledge_base["npc_knowledge"][character_id][entity_type] = {}
+        
+        if category not in self.knowledge_base["npc_knowledge"][character_id][entity_type]:
+            self.knowledge_base["npc_knowledge"][character_id][entity_type][category] = []
         
         # Check if similar information exists
         is_new = True
-        for existing in self.knowledge_base["npc_knowledge"][character_id][category]:
-            if self._is_similar_information(existing["information"], info):
+        for existing in self.knowledge_base["npc_knowledge"][character_id][entity_type][category]:
+            if existing.get("entity_name") == entity_name and self._is_similar_information(existing["information"], info):
                 # Update if new information has higher confidence
                 if confidence > existing["confidence"]:
                     existing["information"] = info
@@ -314,7 +548,8 @@ If no information about the player is revealed, respond with "NO_PLAYER_INFORMAT
         
         # Add new information
         if is_new:
-            self.knowledge_base["npc_knowledge"][character_id][category].append({
+            self.knowledge_base["npc_knowledge"][character_id][entity_type][category].append({
+                "entity_name": entity_name,
                 "information": info,
                 "confidence": confidence,
                 "first_learned": time.time(),
@@ -337,8 +572,18 @@ If no information about the player is revealed, respond with "NO_PLAYER_INFORMAT
         
         return False
     
-    def get_character_knowledge_about_player(self, character_id: str) -> Dict[str, List[str]]:
-        """Get what a character knows about the player, formatted for prompts"""
+    def get_character_knowledge(self, character_id: str, entity_type: str = None, entity_name: str = None) -> Dict[str, Any]:
+        """
+        Get what a character knows, optionally filtered by entity type or specific entity
+        
+        Args:
+            character_id: ID of the NPC
+            entity_type: Optional filter for specific entity type
+            entity_name: Optional filter for specific entity
+            
+        Returns:
+            Dictionary of knowledge grouped by entity type and category
+        """
         result = {}
         
         # Check if character has knowledge
@@ -346,34 +591,47 @@ If no information about the player is revealed, respond with "NO_PLAYER_INFORMAT
            character_id not in self.knowledge_base["npc_knowledge"]:
             return result
         
+        # Filter by entity type if specified
+        entity_types = [entity_type] if entity_type else ENTITY_TYPES
+        
         # Get character's knowledge
-        for category, items in self.knowledge_base["npc_knowledge"][character_id].items():
-            if not items:
+        for etype in entity_types:
+            if etype not in self.knowledge_base["npc_knowledge"][character_id]:
                 continue
-            
-            result[category] = []
-            
-            for item in items:
-                # Format based on confidence
-                knowledge_text = item["information"]
-                if item["confidence"] < 3:
-                    knowledge_text += " (not entirely certain)"
                 
-                result[category].append(knowledge_text)
+            result[etype] = {}
+            
+            for category, items in self.knowledge_base["npc_knowledge"][character_id][etype].items():
+                if not items:
+                    continue
+                
+                result[etype][category] = []
+                
+                for item in items:
+                    # Filter by entity name if specified
+                    if entity_name and item.get("entity_name") != entity_name:
+                        continue
+                        
+                    # Format based on confidence
+                    knowledge_text = f"{item['entity_name']}: {item['information']}"
+                    if item["confidence"] < 3:
+                        knowledge_text += " (not entirely certain)"
+                    
+                    result[etype][category].append(knowledge_text)
         
         return result
     
     def format_player_knowledge(self, character_id: str) -> str:
-        """Format player knowledge for inclusion in prompts"""
-        knowledge = self.get_character_knowledge_about_player(character_id)
+        """Format knowledge about the player for inclusion in prompts"""
+        knowledge = self.get_character_knowledge(character_id, entity_type="player")
         
-        if not knowledge:
+        if not knowledge or "player" not in knowledge:
             return "You don't know much about the player yet."
         
         # Format as sections by category
         sections = []
         
-        for category, items in knowledge.items():
+        for category, items in knowledge["player"].items():
             if not items:
                 continue
             
@@ -385,15 +643,102 @@ If no information about the player is revealed, respond with "NO_PLAYER_INFORMAT
             
             sections.append(section)
         
+        if not sections:
+            return "You don't know much about the player yet."
+            
+        return "\n".join(sections)
+    
+    def format_entity_knowledge(self, character_id: str, entity_type: str, entity_name: str) -> str:
+        """
+        Format knowledge about a specific entity
+        
+        Args:
+            character_id: ID of the NPC
+            entity_type: Type of entity (location, npc, etc.)
+            entity_name: Name of the specific entity
+            
+        Returns:
+            Formatted string of knowledge about the entity
+        """
+        knowledge = self.get_character_knowledge(character_id, entity_type=entity_type)
+        
+        if not knowledge or entity_type not in knowledge:
+            return f"You don't know much about {entity_name}."
+        
+        # Collect information about this specific entity
+        entity_info = {}
+        
+        for category, items in knowledge[entity_type].items():
+            entity_info[category] = []
+            
+            for item in items:
+                if entity_name.lower() in item.lower():
+                    # Extract just the information part after the entity name
+                    parts = item.split(":", 1)
+                    if len(parts) > 1:
+                        entity_info[category].append(parts[1].strip())
+        
+        # Format as sections by category
+        sections = []
+        
+        for category, items in entity_info.items():
+            if not items:
+                continue
+            
+            category_title = category.title()
+            section = f"{category_title}:\n"
+            
+            for item in items:
+                section += f"- {item}\n"
+            
+            sections.append(section)
+        
+        if not sections:
+            return f"You don't know much about {entity_name}."
+            
+        return "\n".join(sections)
+    
+    def format_all_knowledge(self, character_id: str) -> str:
+        """Format all knowledge a character has for debugging"""
+        knowledge = self.get_character_knowledge(character_id)
+        
+        if not knowledge:
+            return "This character doesn't have any knowledge yet."
+        
+        # Format as sections by entity type and category
+        sections = []
+        
+        for entity_type, categories in knowledge.items():
+            type_section = f"=== {entity_type.upper()} ===\n"
+            has_content = False
+            
+            for category, items in categories.items():
+                if not items:
+                    continue
+                
+                category_section = f"{category.title()}:\n"
+                
+                for item in items:
+                    category_section += f"- {item}\n"
+                
+                type_section += category_section + "\n"
+                has_content = True
+            
+            if has_content:
+                sections.append(type_section)
+        
+        if not sections:
+            return "This character doesn't have any knowledge yet."
+            
         return "\n".join(sections)
 
 
 # Function to use in prompt_engine.py
-def assess_player_knowledge(player_input: str, character_id: str, 
-                           conversation_context: str, data_dict: dict, 
-                           ollama_service) -> Dict[str, Any]:
+def assess_knowledge(player_input: str, character_id: str, 
+                    conversation_context: str, data_dict: dict, 
+                    ollama_service) -> Dict[str, Any]:
     """
-    Assess whether player input contains new knowledge
+    Assess whether new knowledge can be extracted from a conversation
     
     Args:
         player_input: The player's message
@@ -406,11 +751,14 @@ def assess_player_knowledge(player_input: str, character_id: str,
         Dictionary with assessment results
     """
     # Initialize knowledge engine if needed (singleton pattern)
-    if not hasattr(assess_player_knowledge, "_engine"):
-        assess_player_knowledge._engine = KnowledgeEngine()
+    if not hasattr(assess_knowledge, "_engine"):
+        assess_knowledge._engine = KnowledgeEngine()
+    
+    print("Extracting knowledge...")
+    print(f"character_id: {character_id}")
     
     # Process the player input
-    return assess_player_knowledge._engine.extract_player_knowledge(
+    return assess_knowledge._engine.extract_knowledge(
         character_id=character_id,
         player_message=player_input,
         conversation_context=conversation_context,
@@ -430,8 +778,28 @@ def get_player_knowledge(character_id: str) -> str:
         Formatted string of knowledge for inclusion in prompts
     """
     # Initialize knowledge engine if needed
-    if not hasattr(assess_player_knowledge, "_engine"):
-        assess_player_knowledge._engine = KnowledgeEngine()
+    if not hasattr(assess_knowledge, "_engine"):
+        assess_knowledge._engine = KnowledgeEngine()
     
     # Get formatted knowledge
-    return assess_player_knowledge._engine.format_player_knowledge(character_id)
+    return assess_knowledge._engine.format_player_knowledge(character_id)
+
+
+def get_entity_knowledge(character_id: str, entity_type: str, entity_name: str) -> str:
+    """
+    Get formatted knowledge about a specific entity
+    
+    Args:
+        character_id: ID of the NPC
+        entity_type: Type of entity (location, npc, etc.)
+        entity_name: Name of the specific entity
+        
+    Returns:
+        Formatted string of knowledge about the entity
+    """
+    # Initialize knowledge engine if needed
+    if not hasattr(assess_knowledge, "_engine"):
+        assess_knowledge._engine = KnowledgeEngine()
+    
+    # Get formatted knowledge
+    return assess_knowledge._engine.format_entity_knowledge(character_id, entity_type, entity_name)

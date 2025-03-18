@@ -2,6 +2,8 @@
 import json
 import os
 import memory_manager
+import knowledge_engine as ke
+
 # Initialize character data
 def load_characters():
     """Load character data from the characters directory"""
@@ -70,12 +72,67 @@ def construct_npc_prompt(character_id, player_input, game_state, mem_manager : m
     if mem_manager is not None:
         memory_context = mem_manager.get_character_memory(game_state['all_characters'], character_id)
         
+    # Initialize knowledge engine if needed
+    if not hasattr(construct_npc_prompt, "_engine"):
+        import knowledge_engine as ke
+        construct_npc_prompt._engine = ke
+    ke = construct_npc_prompt._engine
+    
+    # Get comprehensive knowledge
+    knowledge_sections = []
+    
+    # 1. Player knowledge (always include)
+    player_knowledge = ke.get_player_knowledge(character_id)
+    if player_knowledge and player_knowledge != "You don't know much about the player yet.":
+        knowledge_sections.append(f"ABOUT THE PLAYER:\n{player_knowledge}")
+    
+    # 2. Current location knowledge (always include)
+    location_knowledge = ke.get_entity_knowledge(character_id, "location", game_state['current_location'])
+    if location_knowledge and location_knowledge != f"You don't know much about {game_state['current_location']}.":
+        knowledge_sections.append(f"ABOUT {game_state['current_location'].upper()}:\n{location_knowledge}")
+    
+    # 3. Get knowledge about other NPCs mentioned in recent conversation
+    conversation_text = memory_context + " " + player_input
+    for npc_id in game_state['all_characters']:
+        if npc_id != character_id and npc_id in conversation_text:
+            # NPC is mentioned in conversation
+            npc_data = characters.get(npc_id, {})
+            npc_name = npc_data.get('name', npc_id)
+            npc_knowledge = ke.get_entity_knowledge(character_id, "npc", npc_name)
+            if npc_knowledge and npc_knowledge != f"You don't know much about {npc_name}.":
+                knowledge_sections.append(f"ABOUT {npc_name.upper()}:\n{npc_knowledge}")
+    
+    # 4. Include knowledge about items, events or factions mentioned in conversation
+    # This is a simplified approach - a more sophisticated implementation could 
+    # use NLP to extract entity names from the conversation
+    important_entities = [
+        # Add known important entities that might be mentioned
+        # Format: (entity_name, entity_type)
+        ("red dragon", "event"),
+        ("Northern Wars", "event"),
+        ("ceremonial sword", "item"),
+        ("city guard", "faction"),
+        # Add other important entities from your game world
+    ]
+    
+    for entity_name, entity_type in important_entities:
+        if entity_name.lower() in conversation_text.lower():
+            entity_knowledge = ke.get_entity_knowledge(character_id, entity_type, entity_name)
+            if entity_knowledge and entity_knowledge != f"You don't know much about {entity_name}.":
+                knowledge_sections.append(f"ABOUT {entity_name.upper()}:\n{entity_knowledge}")
+    
+    # 5. Include base character knowledge
     knowledge_section = ""
-    if 'knowledge' in characters:
+    if 'knowledge' in character:
         if isinstance(character['knowledge'], list):
             knowledge_section = ', '.join(character['knowledge'])
         else:
             knowledge_section = str(character['knowledge'])
+    
+    # Combine all knowledge sections
+    combined_knowledge = "\n\n".join(knowledge_sections) if knowledge_sections else "You have no specific knowledge to reference beyond your basic understanding."
+   
+
     
     # Construct the prompt
     prompt = f"""<system>You are roleplaying as {character['name']}, a character in a text adventure game.
@@ -91,8 +148,11 @@ BACKGROUND:
 SPEECH PATTERN:
 {character['speech_pattern']}
 
-KNOWLEDGE:
+BASE KNOWLEDGE:
 {knowledge_section}
+
+CURRENT KNOWLEDGE:
+{combined_knowledge}
 </character_profile>
 
 <previous_interactions>

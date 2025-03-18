@@ -6,6 +6,8 @@ import json
 import memory_manager
 import ollama_manager as om
 import re
+import knowledge_engine as ke
+
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
@@ -154,7 +156,19 @@ def api_interact():
             "stream": False,
             "max_tokens" : 150
         }
-    
+        conversation_context = Mem_manager.get_character_memory(
+            game_state['all_characters'], 
+            game_state['current_npc']
+        )
+        print(type(game_state['current_npc']))
+        ke.assess_knowledge(
+            player_input=player_input,
+            character_id=game_state['current_npc'],
+            conversation_context=conversation_context,
+            data_dict=data,
+            ollama_service=om
+        )
+        
         response = om.get_response(data, game_state, Mem_manager)
         
         Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, game_state['current_location'])
