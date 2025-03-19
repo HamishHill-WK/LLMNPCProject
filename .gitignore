@@ -5,4 +5,7 @@ game.log
 conversations/
 test_results/
 prompts/
-
+data/extraction_results/
+data/extraction_prompts/
+data/debug/
+data/validation_logs/
