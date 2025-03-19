@@ -25,6 +25,16 @@ ENTITY_TYPES = [
     "quest"          # Information about missions and objectives
 ]
 
+json_format = """
+{
+    "entity_type": "",
+    "category": "",
+    "entity_name": "",
+    "information": "",
+    "confidence": 1-5,
+    "source": ""
+}
+    """
 # Information categories for each entity type
 ENTITY_CATEGORIES = {
     "player": [
@@ -210,6 +220,8 @@ class KnowledgeEngine:
         }
         try:
             # Get response from LLM
+            
+            
             extraction_result = ollama_service.get_response(data_dict, minimal_game_state, None)
             
             # Restore original prompt
@@ -284,18 +296,11 @@ class KnowledgeEngine:
             for category in ENTITY_CATEGORIES[entity_type]:
                 entity_categories_text += f"  - {category}: Information about {entity_type}'s {category}\n"
         
-        return f"""<s>
-You are analyzing a conversation in a role-playing game to extract knowledge about various entities in the game world.
+        return f"""<system>
+You are an ai system for analyzing a conversation to extract knowledge about various entities in a game world.
 
-The player's message is: "{player_message}"
-
-Recent conversation context:
-{conversation_context[:300] if len(conversation_context) > 300 else conversation_context}
-
-Your task is to identify any explicit or strongly implied information about the following types of entities:
+Your task is to identify any information about the following types of entities:
 {entity_categories_text}
-
-ONLY extract information that has been clearly revealed. Do not make assumptions about information not directly stated or strongly implied.
 
 For each piece of information you identify:
 1. Specify the entity type (player, npc, location, etc.)
@@ -303,7 +308,7 @@ For each piece of information you identify:
 3. Identify the specific entity being described (name of character, place, etc.)
 4. State the exact information as a clear, concise statement
 5. Rate your confidence (1-5 scale, where 1=uncertain, 5=certain)
-6. Include the exact quote or strong implication from the message
+6. Include the source quote or implication from the message
 
 Format your response as a JSON list where each item has these fields:
 - "entity_type": one of the entity types listed above
@@ -314,18 +319,36 @@ Format your response as a JSON list where each item has these fields:
 - "source": the specific part of the message that supports this
 
 If no relevant information is revealed, respond with "NO_NEW_INFORMATION".
-</s>"""
-    
+</system>
+
+<text for analysis>
+The player's most recent message is: "{player_message}"
+</text for analysis>
+
+<system>
+In your response you MUST provide the information extracted from the player's message in the following format. Fill in the details for each extracted information item:
+{json_format}
+Any other format will be ignored by the system.
+</system>
+"""
     def _parse_extraction_result(self, extraction_text: str) -> List[Dict[str, Any]]:
         """Parse the extraction result from the LLM"""
         # Check for no information response
         if "NO_NEW_INFORMATION" in extraction_text:
+            print(f"Knowledge Engine - No new information found")
             return []
         
         try:
             # Try to find JSON in the response
-            json_match = re.search(r'(\[.*?\])', extraction_text, re.DOTALL)
+            print(f"Knowledge Engine - Parsing extraction result")
+            # print(extraction_text)
+            # print("\n")
+            json_match = re.search(r'(\{.*?\}|\[.*?\])', extraction_text, re.DOTALL)
             if json_match:
+                #print(f"Knowledge Engine {json_match.group(1)}")
+                json_text = json_match.group(1)
+                if json_text.startswith('{'):
+                    json_text = f"[{json_text}]"
                 json_text = json_match.group(1)
                 extracted_items = json.loads(json_text)
                 
@@ -334,6 +357,7 @@ If no relevant information is revealed, respond with "NO_NEW_INFORMATION".
                 for item in extracted_items:
                     # Skip if missing required fields
                     if not all(key in item for key in ["entity_type", "category", "entity_name", "information"]):
+                        #print(f"Knowledge Engine - Skipping item:\n {item}\n\n Failed to validate all required fields\n")
                         continue
                     
                     # Normalize entity type
@@ -755,7 +779,7 @@ def assess_knowledge(player_input: str, character_id: str,
         assess_knowledge._engine = KnowledgeEngine()
     
     print("Extracting knowledge...")
-    print(f"character_id: {character_id}")
+    print(f"KE - player : {player_input}")
     
     # Process the player input
     return assess_knowledge._engine.extract_knowledge(

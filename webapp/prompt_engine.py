@@ -130,10 +130,8 @@ def construct_npc_prompt(character_id, player_input, game_state, mem_manager : m
             knowledge_section = str(character['knowledge'])
     
     # Combine all knowledge sections
-    combined_knowledge = "\n\n".join(knowledge_sections) if knowledge_sections else "You have no specific knowledge to reference beyond your basic understanding."
+    combined_knowledge = "\n\n".join(knowledge_sections) if knowledge_sections else ""
    
-
-    
     # Construct the prompt
     prompt = f"""<system>You are roleplaying as {character['name']}, a character in a text adventure game.
 </system>
@@ -148,10 +146,8 @@ BACKGROUND:
 SPEECH PATTERN:
 {character['speech_pattern']}
 
-BASE KNOWLEDGE:
+KNOWLEDGE:
 {knowledge_section}
-
-CURRENT KNOWLEDGE:
 {combined_knowledge}
 </character_profile>
 
@@ -173,12 +169,12 @@ If the player asks a question or makes a request, you should respond in characte
 If the player says goodbye or otherwise ends the conversation, you should end the interaction naturally.
 Ask the player questions to move the conversation forward and to learn about them. Build on previous interactions and progress the conversation naturally.
 Respond in character as {character['name']}, using your established speech pattern and personality. Don't write more than a paragraph.
-
 You can use <think> tags to write your thought process, which will not be part of your actual response.
+Give your reponse in the format provided below in the <character_response> tags.
 </system>
 
 <character_response>
-{character['name']}:
+{character['name']}: "new response here"
 </character_response>
 """
     

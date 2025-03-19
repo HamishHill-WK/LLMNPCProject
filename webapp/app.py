@@ -160,7 +160,12 @@ def api_interact():
             game_state['all_characters'], 
             game_state['current_npc']
         )
-        print(type(game_state['current_npc']))
+        print(conversation_context)
+        print()
+        print(game_state['current_npc'])
+        print()
+        print(game_state['all_characters'])
+        
         ke.assess_knowledge(
             player_input=player_input,
             character_id=game_state['current_npc'],
