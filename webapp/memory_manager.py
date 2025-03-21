@@ -39,6 +39,9 @@ class MemoryManager:
         # Remove the <think> content from the character response
         clean_response = re.sub(r'<think>.*?</think>', '', character_response, flags=re.DOTALL).strip()
         
+        # Remove <character_response> tags if present
+        clean_response = clean_response.replace('<character_response>', '').replace('</character_response>', '')
+        
         # Split the response into dialogue and actions if "Character Actions:" is present
         dialogue = clean_response
         character_actions = ""

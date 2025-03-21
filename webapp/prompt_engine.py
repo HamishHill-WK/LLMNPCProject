@@ -90,6 +90,8 @@ def construct_npc_prompt(character_id, player_input, game_state, mem_manager : m
     location_knowledge = ke.get_entity_knowledge(character_id, "location", game_state['current_location'])
     if location_knowledge and location_knowledge != f"You don't know much about {game_state['current_location']}.":
         knowledge_sections.append(f"ABOUT {game_state['current_location'].upper()}:\n{location_knowledge}")
+        
+    print(location_knowledge)
     
     # 3. Get knowledge about other NPCs mentioned in recent conversation
     conversation_text = memory_context + " " + player_input
@@ -115,11 +117,14 @@ def construct_npc_prompt(character_id, player_input, game_state, mem_manager : m
         # Add other important entities from your game world
     ]
     
+    entity_knowledge = ""
     for entity_name, entity_type in important_entities:
         if entity_name.lower() in conversation_text.lower():
             entity_knowledge = ke.get_entity_knowledge(character_id, entity_type, entity_name)
             if entity_knowledge and entity_knowledge != f"You don't know much about {entity_name}.":
                 knowledge_sections.append(f"ABOUT {entity_name.upper()}:\n{entity_knowledge}")
+    
+    print(entity_knowledge)
     
     # 5. Include base character knowledge
     knowledge_section = ""
@@ -155,27 +160,23 @@ KNOWLEDGE:
 {memory_context}
 </previous_interactions>
 
-<player_message>
-Player: {player_input}
-</player_message>
-
 <system>
 CURRENT SITUATION:
 - Location: {game_state['current_location']}
-
-The player says to you: "{player_input}"
 
 If the player asks a question or makes a request, you should respond in character based on the previous interactions and knowledge in the text provided above.
 If the player says goodbye or otherwise ends the conversation, you should end the interaction naturally.
 Ask the player questions to move the conversation forward and to learn about them. Build on previous interactions and progress the conversation naturally.
 Respond in character as {character['name']}, using your established speech pattern and personality. Don't write more than a paragraph.
-You can use <think> tags to write your thought process, which will not be part of your actual response.
-Give your reponse in the format provided below in the <character_response> tags.
-</system>
 
+Give your reponse in the format provided below in the <character_response> tags.
+<player_message>
+Player: {player_input}
+</player_message>
 <character_response>
 {character['name']}: "new response here"
 </character_response>
+</system>
 """
     
     return prompt

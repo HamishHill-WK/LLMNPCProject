@@ -154,17 +154,18 @@ def api_interact():
             "model": "deepseek-r1:8b",  # Match the Ollama model name
             "prompt": prompt,
             "stream": False,
+            "temperature": 0.6,
             "max_tokens" : 150
         }
         conversation_context = Mem_manager.get_character_memory(
             game_state['all_characters'], 
             game_state['current_npc']
         )
-        print(conversation_context)
-        print()
-        print(game_state['current_npc'])
-        print()
-        print(game_state['all_characters'])
+        # print(conversation_context)
+        # print()
+        # print(game_state['current_npc'])
+        # print()
+        # print(game_state['all_characters'])
         
         ke.assess_knowledge(
             player_input=player_input,

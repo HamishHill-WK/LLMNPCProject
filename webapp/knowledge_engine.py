@@ -295,7 +295,7 @@ class KnowledgeEngine:
             entity_categories_text += f"- {entity_type.upper()}:\n"
             for category in ENTITY_CATEGORIES[entity_type]:
                 entity_categories_text += f"  - {category}: Information about {entity_type}'s {category}\n"
-        
+                        
         return f"""<system>
 You are an ai system for analyzing a conversation to extract knowledge about various entities in a game world.
 
@@ -349,7 +349,7 @@ Any other format will be ignored by the system.
                 json_text = json_match.group(1)
                 if json_text.startswith('{'):
                     json_text = f"[{json_text}]"
-                json_text = json_match.group(1)
+               # json_text = json_match.group(1)
                 extracted_items = json.loads(json_text)
                 
                 # Validate and clean up items
@@ -612,7 +612,7 @@ Any other format will be ignored by the system.
         
         # Check if character has knowledge
         if "npc_knowledge" not in self.knowledge_base or \
-           character_id not in self.knowledge_base["npc_knowledge"]:
+            character_id not in self.knowledge_base["npc_knowledge"]:
             return result
         
         # Filter by entity type if specified
