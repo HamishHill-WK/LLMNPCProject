@@ -7,12 +7,17 @@ import memory_manager
 import ollama_manager as om
 import re
 import knowledge_engine as ke
+import executive as kep  # Import the new module
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-Mem_manager = memory_manager.MemoryManager(max_short_term=3)
-prompt_engine = pe.PromptEngine()
+knowledge_engine = ke.KnowledgeEngine()
+executive_planner = kep.KnowledgeExecutivePlanner(knowledge_engine=knowledge_engine)
+Mem_manager = memory_manager.MemoryManager(max_short_term=3, knowledge_engine=knowledge_engine)
+prompt_engine = pe.Prompt_Engine(memory_manager=Mem_manager, knowledge_engine=knowledge_engine)
+ollama_manager = om.OllamaManager(prompt_engine=prompt_engine)
+
 # Simple game state
 game_state = {
     'current_location': 'tavern',
@@ -85,6 +90,8 @@ def change_simulation_npc():
 def simulate_conversation():
     npc_a = request.args.get('npc_a')
     npc_b = request.args.get('npc_b')
+    print(f"app npca: {npc_a}")
+    print(f"app npcb: {npc_b}")
     simulation_state['npc_A'] = npc_a
     simulation_state['npc_B'] = npc_b
     initial_prompt = request.args.get('simulation_input')
@@ -108,15 +115,11 @@ def simulate_conversation():
         for i in range(turns):
             print("appL boops")
             data["prompt"] = message
-            # NPC 1's turn
-            #print(data)
-           # print(f"SIM STATE \n\n {simulation_state} \n end sim state \n\n")
-            npc1_response = om.get_response(data, simulation_state, Mem_manager)
-           # print("appL bo00000000ops")
+
+            npc1_response = ollama_manager.get_response(data, simulation_state, Mem_manager)
 
             # Switch speaker in simulation state
             Mem_manager.add_interaction(simulation_state[simulation_state['current_speaker']], simulation_state['current_listener'], message, npc1_response, simulation_state['current_location'])
-            print("appL bo00000000ops20o2020202")
             simulation_state['current_listener'] = simulation_state['current_speaker']
             simulation_state['current_speaker'] = 'npc_A' if simulation_state['current_speaker'] == 'npc_B' else 'npc_B'
             npc1_response = re.sub(r'<think>.*?</think>', '', npc1_response, flags=re.DOTALL).strip()
@@ -152,31 +155,46 @@ def api_interact():
             "model": "deepseek-r1:8b",  # Match the Ollama model name
             "prompt": prompt,
             "stream": False,
-            "temperature": 0.6,
-            "max_tokens" : 150
+            "max_tokens": 150
         }
+        
+        # Get conversation context for the character
         conversation_context = Mem_manager.get_character_memory(
             game_state['all_characters'], 
             game_state['current_npc']
         )
-
-        ke.assess_knowledge(
+        
+        # Use the executive planner to analyze if knowledge is needed
+        knowledge_analysis = executive_planner.analyze_for_knowledge(
             player_input=player_input,
             character_id=game_state['current_npc'],
+            game_state=game_state,
             conversation_context=conversation_context,
-            data_dict=data,
-            ollama_service=om
+            ollama_manager=ollama_manager
         )
         
+        # If knowledge is required, retrieve it
+        if knowledge_analysis.get("knowledge_required", False):
+            print(f"Knowledge required for: {knowledge_analysis.get('knowledge_query', '')}")
+            # Use the existing knowledge engine to retrieve knowledge
+            ke.assess_knowledge(
+                player_input=player_input,
+                character_id=game_state['current_npc'],
+                conversation_context=conversation_context,
+                data_dict=data,
+                ollama_service=om
+            )
+        
+        # Get response from LLM
         response = om.get_response(data, game_state, Mem_manager)
         
-        response, chain_of_thought = om.clean_response(response)
-        
-        Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
+        # Add to memory
+        Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, game_state['current_location'])
         
         return jsonify({
             "response": response,
-            "game_state": game_state
+            "game_state": game_state,
+            "knowledge_used": knowledge_analysis.get("knowledge_required", False)
         })
     except Exception as e:
         print(f"Error: {e}")
@@ -184,10 +202,8 @@ def api_interact():
 
 if __name__ == '__main__':
     character_data = pe.load_characters()
-    Mem_manager.save_characters(character_data)
     game_state['all_characters'] = character_data
     simulation_state['all_characters'] = character_data    
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         webbrowser.open('http://127.0.0.1:5001')
     app.run(debug=True, port=5001)
-

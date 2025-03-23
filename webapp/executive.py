@@ -25,8 +25,9 @@ class DialogueContext:
 class KnowledgeExecutivePlanner:
     """Analyzes player input and determines if external knowledge is required"""
     
-    def __init__(self, ollama_service=None):
+    def __init__(self, ollama_service=None, knowledge_engine=None):
         self.ollama_service = ollama_service
+        self.knowledge_engine = knowledge_engine
         
         # Define common patterns for message classification
         self.patterns = {
@@ -57,14 +58,15 @@ class KnowledgeExecutivePlanner:
         analysis = self._initial_pattern_analysis(message)
         
         # Analyze knowledge requirements
-        knowledge_analysis = self._analyze_knowledge_needs(context)
-        analysis.update(knowledge_analysis)
+        if analysis.get("requires_memory", True):
+            knowledge_analysis = self._analyze_knowledge_needs(context)
+            analysis.update(knowledge_analysis)
 
-        # If LLM service is available, enhance analysis using it
-        if self.ollama_service and len(message) > 10:  # Don't use LLM for very short messages
-            llm_analysis = self._get_llm_analysis(context)
-            # Merge LLM analysis with pattern analysis, prioritizing LLM
-            analysis = {**analysis, **llm_analysis}
+            # If LLM service is available, enhance analysis using it
+            if self.ollama_service and len(message) > 10:  # Don't use LLM for very short messages
+                llm_analysis = self._get_llm_analysis(context)
+                # Merge LLM analysis with pattern analysis, prioritizing LLM
+                analysis = {**analysis, **llm_analysis}
         
         # Store analysis in context
         context.analysis = analysis
