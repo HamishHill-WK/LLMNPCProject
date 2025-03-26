@@ -37,7 +37,7 @@ class KnowledgeExecutivePlanner:
             'memory_recall': r'\b(remember|recall|earlier|before|last time|previously|you said|you told me|you mentioned)\b',
             'command': r'\b(go|take|give|show|tell|bring|find|get|put|use|open|close|attack|defend|move|run|walk|stop)\b',
             'emotional': r'\b(love|hate|angry|sad|happy|afraid|scared|worried|excited|proud|guilty|ashamed|disgusted)\b',
-            'knowledge_query': r'\b(know|explain|tell me about||information on|details about|history of|meaning of)\b'
+            'knowledge_query': r'\b(know|explain|tell me about|information on|details about|history of|meaning of)\b'
         }
         
         # Keywords that suggest knowledge might be needed
