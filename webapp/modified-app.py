@@ -172,11 +172,7 @@ def api_interact():
             conversation_context=conversation_context,
         )
         
-        print(f"Knowledge analysis: {knowledge_analysis}")
-        
-        # If knowledge is required, retrieve it
-        if knowledge_analysis.get("knowledge_required", False) or knowledge_analysis.get("requires_memory", False):
-            print(f"Knowledge required for: {knowledge_analysis.get('knowledge_query', '')}")
+        data["knowledge_analysis"] = knowledge_analysis
         
         knowledge_engine.assess_knowledge(
             player_input=player_input,
@@ -185,22 +181,24 @@ def api_interact():
             data_dict=data,
             ollama_service=ollama_manager
         )
-    
-        # Get response from LLM
-        response = ollama_manager.get_response(data, game_state, Mem_manager)
         
-        #print(f"Response: {response}")
+        response = ""
+        # If knowledge is required, retrieve it
+        if knowledge_analysis.get("knowledge_required", False) or knowledge_analysis.get("requires_memory", False):
+            print(f"Knowledge required for: {knowledge_analysis.get('knowledge_query', '')}")
         
-        response, chain_of_thought = ollama_manager.clean_response(response)
+        if len(knowledge_analysis['message_types']) == 1 and ('greeting' in knowledge_analysis['message_types'] or 'farewell' in knowledge_analysis['message_types']):
+            response = ollama_manager.get_response(data, game_state, Mem_manager)
+            response, chain_of_thought = ollama_manager.clean_response(response)
+            Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
         
-        #print(f"Cleaned response: {response}")
-        #print(f"Chain of thought: {chain_of_thought}")
-        
-        # Add to memory
-        Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
-    
-        print(f"Memory saved ")
-    
+        elif knowledge_analysis['knowledge_required'] or knowledge_analysis['requires_memory']:
+            print("knowledge required")
+            # Get response from LLM
+            response = ollama_manager.get_response(data, game_state, Mem_manager)
+            response, chain_of_thought = ollama_manager.clean_response(response)
+            Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
+            
         return jsonify({
             "response": response,
             "game_state": game_state,
