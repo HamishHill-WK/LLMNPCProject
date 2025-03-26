@@ -4,7 +4,7 @@
 import json
 import re
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List 
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -47,39 +47,10 @@ class KnowledgeExecutivePlanner:
             'creature', 'item', 'spell', 'ability', 'rule', 'lore', 'legend',
             'craft', 'potion', 'weapon', 'armor', 'quest', 'mission'
         ]
-    
-    def analyze_message(self, context: DialogueContext) -> Dict[str, Any]:
-        """Analyze player message to determine processing approach"""
         
-        # Get player message and lowercase for pattern matching
-        message = context.player_message
-        
-        # Perform basic pattern-based analysis first
-        analysis = self._initial_pattern_analysis(message)
-        
-        # Analyze knowledge requirements
-        if analysis.get("requires_memory", True):
-            knowledge_analysis = self._analyze_knowledge_needs(context)
-            analysis.update(knowledge_analysis)
-
-            # If LLM service is available, enhance analysis using it
-            if self.ollama_service and len(message) > 10:  # Don't use LLM for very short messages
-                llm_analysis = self._get_llm_analysis(context)
-                # Merge LLM analysis with pattern analysis, prioritizing LLM
-                analysis = {**analysis, **llm_analysis}
-        
-        # Store analysis in context
-        context.analysis = analysis
-        
-        # Set knowledge required flag in context
-        context.knowledge_required = analysis.get("knowledge_required", False)
-        if context.knowledge_required:
-            context.knowledge_query = analysis.get("knowledge_query", "")
-            
-        return analysis
-    
     def _initial_pattern_analysis(self, message: str) -> Dict[str, Any]:
         """Perform initial pattern-based analysis of the message"""
+        print("initial pattern analysis")
         requires_memory = False
         memory_search_strategy = "none"
         memory_keywords = []
@@ -90,10 +61,11 @@ class KnowledgeExecutivePlanner:
                 message_types.append(type_name)
 
         if "memory_recall" in message_types or "knowledge_query" in message_types or "question" in message_types:
+            print("memory recall")
             requires_memory = True
             memory_search_strategy = "semantic"
             # Extract potential keywords for memory search
-            memory_keywords = [word for word in message.split() if len(word) > 2 and word not in ["remember", "recall", "said", "told", "mentioned", "the", "a", "yes" ] and word not in self.patterns['greetings'] and word not in self.patterns['farewell'] and word not in self.patterns['question']]
+            memory_keywords = [word for word in message.split() if len(word) > 2 and word not in ["remember", "recall", "said", "told", "mentioned", "the", "a", "yes" ] and word not in self.patterns['greeting'] and word not in self.patterns['farewell'] and word not in self.patterns['question']]
  
         analysis = {
             "message_types": message_types,
@@ -103,72 +75,9 @@ class KnowledgeExecutivePlanner:
         } 
         return analysis
     
-    def _analyze_knowledge_needs(self, context: DialogueContext) -> Dict[str, Any]:
-        """Analyze if the message requires external knowledge to respond appropriately"""
-        message = context.player_message.lower()
-        
-        # Check if this is a direct knowledge query
-        is_knowledge_query = re.search(self.patterns['knowledge_query'], message) is not None
-        
-        # Check for domain-specific keywords that might indicate knowledge is needed
-        knowledge_domains_found = []
-        for domain in self.knowledge_domains:
-            if domain.lower() in message:
-                knowledge_domains_found.append(domain)
-        
-        # Check if NPC character would reasonably know this information
-        # This requires checking against character knowledge boundaries
-        character_id = context.character_id
-        npc_knowledge_boundaries = self._get_npc_knowledge_boundaries(character_id, context.game_state)
-        
-        # Determine if this requires knowledge beyond NPC's defined knowledge
-        # This is a simplistic approach - in a real system, you'd use more sophisticated
-        # semantic analysis or LLM-based evaluation
-        exceeds_npc_knowledge = is_knowledge_query and (
-            len(knowledge_domains_found) > 0 or
-            re.search(r'\b(what|who|when|where|why|how)\b.*\?', message)
-        )
-        
-        if npc_knowledge_boundaries:
-            for boundary in npc_knowledge_boundaries:
-                boundary_lower = boundary.lower()
-                # If any boundary specifically mentions this is within NPC knowledge
-                for domain in knowledge_domains_found:
-                    if domain.lower() in boundary_lower:
-                        exceeds_npc_knowledge = False
-                        break
-        
-        # Generate a knowledge query if needed
-        knowledge_query = ""
-        if exceeds_npc_knowledge:
-            # Extract the core question or topic
-            if "?" in message:
-                knowledge_query = message
-            else:
-                # Extract key phrases that might be the subject of inquiry
-                words = message.split()
-                for domain in knowledge_domains_found:
-                    pattern = rf'\b{domain}\s+of\s+(\w+|\w+\s+\w+)\b'
-                    match = re.search(pattern, message)
-                    if match:
-                        knowledge_query = f"Information about {match.group(1)} {domain}"
-                        break
-                
-                if not knowledge_query and len(words) > 3:
-                    # Simple approach: take the latter part of the message as the query
-                    knowledge_query = " ".join(words[len(words)//2:])
-        
-        # If this is clearly a knowledge query that exceeds the NPC's boundaries,
-        # mark it as requiring external knowledge retrieval
-        return {
-            "knowledge_required": exceeds_npc_knowledge,
-            "knowledge_domains": knowledge_domains_found,
-            "knowledge_query": knowledge_query,
-            "exceeds_npc_knowledge": exceeds_npc_knowledge
-        }
-    
     def _get_npc_knowledge_boundaries(self, character_id: str, game_state: Dict[str, Any]) -> List[str]:
         """Get the defined knowledge boundaries for an NPC"""
+        print("get npc knowledge boundaries")
         # Check if the game state has character data
         if "all_characters" in game_state and character_id in game_state["all_characters"]:
             character_data = game_state["all_characters"].get(character_id, {})
@@ -186,6 +95,7 @@ class KnowledgeExecutivePlanner:
         return []
     
     def _get_llm_analysis(self, context: DialogueContext) -> Dict[str, Any]:
+        print("get llm analysis")
         """Get enhanced analysis using the LLM"""
 
         prompt = f"""<system>
@@ -233,56 +143,35 @@ Respond with ONLY a JSON object and nothing else.
             # Parse JSON response
             llm_analysis = json.loads(llm_response)
             
-            # Clean up booleans since JSON might have them as strings
-            if "knowledge_required" in llm_analysis:
-                if isinstance(llm_analysis["knowledge_required"], str):
-                    llm_analysis["knowledge_required"] = llm_analysis["knowledge_required"].lower() == "true"
-            
-            if "exceeds_npc_knowledge" in llm_analysis:
-                if isinstance(llm_analysis["exceeds_npc_knowledge"], str):
-                    llm_analysis["exceeds_npc_knowledge"] = llm_analysis["exceeds_npc_knowledge"].lower() == "true"
-            
             return llm_analysis
         except Exception as e:
             logger.error(f"Error getting LLM analysis: {e}")
             # Return empty dict to fall back to pattern analysis
             return {}
-    
-# Function for use in app.py
-def analyze_for_knowledge(player_input: str, character_id: str, 
-                        game_state: Dict[str, Any], conversation_context: str, 
-                        ollama_manager=None) -> Dict[str, Any]:
-    """
-    Analyze a player message to determine if knowledge retrieval is needed
-    
-    Args:
-        player_input: The player's message
-        character_id: ID of the NPC receiving the message
-        game_state: Current game state
-        conversation_context: Recent conversation history
-        ollama_manager: Service for LLM requests
         
-    Returns:
-        Dictionary with analysis results including knowledge requirements
-    """
-    # Initialize planner if needed (singleton pattern)
-    if not hasattr(analyze_for_knowledge, "_planner"):
-        analyze_for_knowledge._planner = KnowledgeExecutivePlanner(ollama_service=ollama_manager)
-    
-    # Create dialogue context
-    context = DialogueContext(
-        character_id=character_id,
-        player_message=player_input,
-        game_state=game_state,
-        conversation_context=conversation_context
-    )
-    
-    # Analyze message
-    analyze_for_knowledge._planner.analyze_message(context)
-    
-    # Return analysis results
-    return {
-        "knowledge_required": context.knowledge_required,
-        "knowledge_query": context.knowledge_query,
-        "analysis": context.analysis
-    }
+    # Function for use in app.py
+    def analyze_for_knowledge(self, player_input: str, character_id: str, 
+                            game_state: Dict[str, Any], conversation_context: str) -> Dict[str, Any]:
+
+        context = DialogueContext(
+            character_id=character_id,
+            player_message=player_input,
+            game_state=game_state,
+            conversation_context=conversation_context
+        )
+        
+        print("analyze message")
+        
+        # Get player message and lowercase for pattern matching
+        message = context.player_message
+        
+        # Perform basic pattern-based analysis first
+        analysis = self._initial_pattern_analysis(message)
+        
+        # Analyze knowledge requirements
+        if analysis.get("requires_memory", True) and self.ollama_service and len(message) > 10:
+                llm_analysis = self._get_llm_analysis(context)
+                # Merge LLM analysis with pattern analysis, prioritizing LLM
+                analysis = {**analysis, **llm_analysis}
+        
+        return analysis

@@ -126,7 +126,7 @@ def simulate_conversation():
             yield f"data: {json.dumps({'speaker': simulation_state[simulation_state['current_speaker']], 'message': npc1_response, 'turn': i * 2})}\n\n"
             data["prompt"] = npc1_response
             # NPC 2's turn
-            npc2_response = om.get_response(data, simulation_state, Mem_manager)
+            npc2_response = ollama_manager.get_response(data, simulation_state, Mem_manager)
             Mem_manager.add_interaction(simulation_state[simulation_state['current_speaker']], simulation_state[simulation_state['current_listener']], npc1_response, npc2_response, simulation_state['current_location'])
             npc2_response = re.sub(r'<think>.*?</think>', '', npc2_response, flags=re.DOTALL).strip()
             simulation_state['current_listener'] = simulation_state['current_speaker']
@@ -170,27 +170,37 @@ def api_interact():
             character_id=game_state['current_npc'],
             game_state=game_state,
             conversation_context=conversation_context,
-            ollama_manager=ollama_manager
         )
         
+        print(f"Knowledge analysis: {knowledge_analysis}")
+        
         # If knowledge is required, retrieve it
-        if knowledge_analysis.get("knowledge_required", False):
+        if knowledge_analysis.get("knowledge_required", False) or knowledge_analysis.get("requires_memory", False):
             print(f"Knowledge required for: {knowledge_analysis.get('knowledge_query', '')}")
             # Use the existing knowledge engine to retrieve knowledge
-            ke.assess_knowledge(
+            knowledge_engine.assess_knowledge(
                 player_input=player_input,
                 character_id=game_state['current_npc'],
                 conversation_context=conversation_context,
                 data_dict=data,
-                ollama_service=om
+                ollama_service=ollama_manager
             )
         
         # Get response from LLM
-        response = om.get_response(data, game_state, Mem_manager)
+        response = ollama_manager.get_response(data, game_state, Mem_manager)
+        
+        #print(f"Response: {response}")
+        
+        response, chain_of_thought = ollama_manager.clean_response(response)
+        
+        #print(f"Cleaned response: {response}")
+        #print(f"Chain of thought: {chain_of_thought}")
         
         # Add to memory
-        Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, game_state['current_location'])
-        
+        Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
+    
+        print(f"Memory saved ")
+    
         return jsonify({
             "response": response,
             "game_state": game_state,
@@ -201,7 +211,9 @@ def api_interact():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    character_data = pe.load_characters()
+    character_data = prompt_engine.load_characters()
+    Mem_manager.save_characters(character_data)
+    Mem_manager.set_ollama(ollama_manager)
     game_state['all_characters'] = character_data
     simulation_state['all_characters'] = character_data    
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':

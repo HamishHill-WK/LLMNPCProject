@@ -10,6 +10,7 @@ class OllamaManager:
         self.prompt_engine = prompt_engine
         
     def get_response(self, data, game_state, Mem_manager):
+        print(f"Getting response for: {data}")
         # Save prompt to a text file
         if Mem_manager:
             data["prompt"] = self.prompt_engine.add_system_prompt(data, game_state, Mem_manager)
@@ -30,7 +31,7 @@ class OllamaManager:
         response_json = response.json()
         return response_json.get('response', 'No response')
 
-    def clean_response(character_response):
+    def clean_response(slef, character_response):
             # Extract the chain of thought (content between <think> tags)
         chain_of_thought_match = re.search(r'<think>(.*?)</think>', character_response, re.DOTALL)
         chain_of_thought = chain_of_thought_match.group(1).strip() if chain_of_thought_match else ""

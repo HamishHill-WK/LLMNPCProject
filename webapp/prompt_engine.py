@@ -11,10 +11,9 @@ class Prompt_Engine:
         self.memory_manager = memory_manager
         
 # Initialize character data
-    def load_characters():
+    def load_characters(self):
         """Load character data from the characters directory"""
-        characters = {}
-        
+        characters = {}       
         # Load character files
         character_files = os.listdir('characters')
         for file in character_files:
@@ -60,9 +59,6 @@ class Prompt_Engine:
         with open('characters/tavernkeeper.json', 'w') as f:
             json.dump(sample_character, f, indent=2)
 
-    # Load characters once when module is imported
-    characters = load_characters()
-
     def construct_npc_prompt(self, character_id, player_input, game_state, mem_manager : memory_manager.MemoryManager):
         """Construct a prompt for the NPC based on character data and memory"""
         if character_id not in self.characters:
@@ -76,12 +72,12 @@ class Prompt_Engine:
         # Get comprehensive knowledge
         knowledge_sections = []
         # 1. Player knowledge (always include)
-        player_knowledge = knowledge_section.get_player_knowledge(character_id)
+        player_knowledge = self.knowledge_engine.get_player_knowledge(character_id)
         if player_knowledge and player_knowledge != "You don't know much about the player yet.":
             knowledge_sections.append(f"ABOUT THE PLAYER:\n{player_knowledge}")
 
         # 2. Current location knowledge (always include)
-        location_knowledge = knowledge_section.get_entity_knowledge(character_id, "location", game_state['current_location'])
+        location_knowledge = self.knowledge_engine.get_entity_knowledge(character_id, "location", game_state['current_location'])
         if location_knowledge and location_knowledge != f"You don't know much about {game_state['current_location']}.":
             knowledge_sections.append(f"ABOUT {game_state['current_location'].upper()}:\n{location_knowledge}")
             
@@ -95,7 +91,7 @@ class Prompt_Engine:
                 # NPC is mentioned in conversation
                 npc_data = self.characters.get(npc_id, {})
                 npc_name = npc_data.get('name', npc_id)
-                npc_knowledge = knowledge_section.get_entity_knowledge(character_id, "npc", npc_name)
+                npc_knowledge = self.knowledge_engine.get_entity_knowledge(character_id, "npc", npc_name)
                 if npc_knowledge and npc_knowledge != f"You don't know much about {npc_name}.":
                     knowledge_sections.append(f"ABOUT {npc_name.upper()}:\n{npc_knowledge}")
         
@@ -115,7 +111,7 @@ class Prompt_Engine:
         entity_knowledge = ""
         for entity_name, entity_type in important_entities:
             if entity_name.lower() in conversation_text.lower():
-                entity_knowledge = ke.get_entity_knowledge(character_id, entity_type, entity_name)
+                entity_knowledge = self.knowledge_engine.get_entity_knowledge(character_id, entity_type, entity_name)
                 if entity_knowledge and entity_knowledge != f"You don't know much about {entity_name}.":
                     knowledge_sections.append(f"ABOUT {entity_name.upper()}:\n{entity_knowledge}")
         
