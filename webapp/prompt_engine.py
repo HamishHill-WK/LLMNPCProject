@@ -59,15 +59,15 @@ class Prompt_Engine:
         with open('characters/tavernkeeper.json', 'w') as f:
             json.dump(sample_character, f, indent=2)
 
-    def construct_npc_prompt(self, character_id, player_input, game_state, mem_manager : memory_manager.MemoryManager):
+    def construct_npc_prompt(self, character_id, player_input, game_state):
         """Construct a prompt for the NPC based on character data and memory"""
         if character_id not in self.characters:
             return "Error: Character not found."
         character = self.characters[character_id]
         # Get character memory
         memory_context = "No previous interactions."
-        if mem_manager is not None:
-            memory_context = mem_manager.get_character_memory(game_state['all_characters'], character_id)
+        if self.memory_manager is not None:
+            memory_context = self.memory_manager.get_character_memory(game_state['all_characters'], character_id)
 
         # Get comprehensive knowledge
         knowledge_sections = []

@@ -23,25 +23,21 @@ class DialogueContext:
         self.knowledge_result = None
 
 class KnowledgeExecutivePlanner:
-    """Analyzes player input and determines if external knowledge is required"""
-    
     def __init__(self, ollama_service=None, knowledge_engine=None):
         self.ollama_service = ollama_service
-        
         self.knowledge_engine = knowledge_engine
         
-        print(f"Knowledge Executive Planner initialized type {type(self.ollama_service)}" )
+        #print(f"Knowledge Executive Planner initialized type {type(self.ollama_service)}" )
         
         # Define common patterns for message classification
         self.patterns = {
             'greeting': r'\b(hello|hi|hey|greetings|good morning|good day|good evening|howdy)\b',
             'farewell': r'\b(goodbye|bye|farewell|see you|later|take care)\b',
-            'question': r'\b(who|what|when|where|why|how|can you|could you|would you|do you|is there|are there)\b.*\?',
+            'question': r'\b(who|what|when|where|why|how|can you|could you|would you|do you|is there|are there|was there)\b.*\?',
             'memory_recall': r'\b(remember|recall|earlier|before|last time|previously|you said|you told me|you mentioned)\b',
             'command': r'\b(go|take|give|show|tell|bring|find|get|put|use|open|close|attack|defend|move|run|walk|stop)\b',
             'emotional': r'\b(love|hate|angry|sad|happy|afraid|scared|worried|excited|proud|guilty|ashamed|disgusted)\b',
-            # Knowledge-specific patterns
-            'knowledge_query': r'\b(know|explain|tell me about|what|who|when|where|why|how|information on|details about|history of|meaning of)\b'
+            'knowledge_query': r'\b(know|explain|tell me about||information on|details about|history of|meaning of)\b'
         }
         
         # Keywords that suggest knowledge might be needed
@@ -60,19 +56,26 @@ class KnowledgeExecutivePlanner:
         requires_memory = False
         memory_search_strategy = "none"
         memory_keywords = []
-        
         message_types = []
-        for type_name, pattern in self.patterns.items():
-            if re.search(pattern, message, re.IGNORECASE):
-                message_types.append(type_name)
-
-        if "memory_recall" in message_types or "knowledge_query" in message_types or "question" in message_types:
-            print("memory recall")
+        
+        if '?' in message:  # Check for question marks
             requires_memory = True
+            message_types.append("question")
             memory_search_strategy = "semantic"
-            # Extract potential keywords for memory search
-            memory_keywords = [word for word in message.split() if len(word) > 2 and word not in ["remember", "recall", "said", "told", "mentioned", "the", "a", "yes" ] and word not in self.patterns['greeting'] and word not in self.patterns['farewell'] and word not in self.patterns['question']]
- 
+            memory_keywords = self.get_keywords(message)
+
+        if requires_memory is False:
+            for type_name, pattern in self.patterns.items():
+                if re.search(pattern, message, re.IGNORECASE):
+                    message_types.append(type_name)
+
+            if "memory_recall" in message_types or "knowledge_query" in message_types or "question" in message_types:
+                print("memory recall")
+                requires_memory = True
+                memory_search_strategy = "semantic"
+                # Extract potential keywords for memory search
+                memory_keywords = self.get_keywords(message)
+    
         analysis = {
             "message_types": message_types,
             "requires_memory": requires_memory,
@@ -81,24 +84,28 @@ class KnowledgeExecutivePlanner:
         } 
         return analysis
     
-    def _get_npc_knowledge_boundaries(self, character_id: str, game_state: Dict[str, Any]) -> List[str]:
-        """Get the defined knowledge boundaries for an NPC"""
-        print("get npc knowledge boundaries")
-        # Check if the game state has character data
-        if "all_characters" in game_state and character_id in game_state["all_characters"]:
-            character_data = game_state["all_characters"].get(character_id, {})
-            if "knowledge" in character_data:
-                if isinstance(character_data["knowledge"], list):
-                    return character_data["knowledge"]
-                else:
-                    return [character_data["knowledge"]]
+    def get_keywords(self, message: str) -> List[str]:
+        print("get keywords")
+        return [word for word in message.split() if len(word) > 2 and word not in ["remember", "recall", "said", "told", "mentioned", "the", "a", "yes" ] and word not in self.patterns['greeting'] and word not in self.patterns['farewell'] and word not in self.patterns['question']]
+
+    
+    # def _get_npc_knowledge_boundaries(self, character_id: str, game_state: Dict[str, Any]) -> List[str]:
+    #     print("get npc knowledge boundaries")
+    #     # Check if the game state has character data
+    #     if "all_characters" in game_state and character_id in game_state["all_characters"]:
+    #         character_data = game_state["all_characters"].get(character_id, {})
+    #         if "knowledge" in character_data:
+    #             if isinstance(character_data["knowledge"], list):
+    #                 return character_data["knowledge"]
+    #             else:
+    #                 return [character_data["knowledge"]]
             
-            # Also check for knowledge_boundaries
-            if "knowledge_boundaries" in character_data:
-                return character_data["knowledge_boundaries"]
+    #         # Also check for knowledge_boundaries
+    #         if "knowledge_boundaries" in character_data:
+    #             return character_data["knowledge_boundaries"]
         
-        # Return empty list if no knowledge boundaries found
-        return []
+    #     # Return empty list if no knowledge boundaries found
+    #     return []
     
     def _get_llm_analysis(self, context: DialogueContext) -> Dict[str, Any]:
         print("get llm analysis")
@@ -115,12 +122,11 @@ Analyze this message and provide a JSON response with the following:
 1. message_type: One of [greeting, question, statement, request, command, emotional]
 2. knowledge_required: Whether the NPC will need to access their deeper knowledge to answer this properly [true/false]
 3. knowledge_query: If knowledge is required, what specific information needs to be retrieved
-4. exceeds_npc_knowledge: Whether this question is outside what the NPC would know [true/false]
-
+4. memory_search_strategy: How should the NPC search for relevant memories [semantic, keyword, none]
+5. memory_search_keywords: Keywords or phrases that could be used to search for relevant memories
 Respond with ONLY a JSON object and nothing else.
 </system>
 """
-        
         try:
             # Create data for ollama request
             data = {
@@ -130,22 +136,22 @@ Respond with ONLY a JSON object and nothing else.
                 "max_tokens": 150,
                 "temperature": 0.1  # Low temperature for more predictable analysis
             }
-            
+
             # Create minimal game state for the request
             minimal_game_state = {
                 "current_npc": context.character_id,
                 "current_location": context.game_state.get("current_location", "unknown"),
                 "all_characters": {}
             }
-            
+
             # Get response from LLM
             llm_response = self.ollama_service.get_response(data, minimal_game_state, None)
-            
+
             # Try to extract just the JSON part if there's any additional text
             json_match = re.search(r'({.*})', llm_response, re.DOTALL)
             if json_match:
                 llm_response = json_match.group(1)
-            
+
             # Parse JSON response
             llm_analysis = json.loads(llm_response)
             
@@ -165,14 +171,9 @@ Respond with ONLY a JSON object and nothing else.
             game_state=game_state,
             conversation_context=conversation_context
         )
-        
-        print("analyze message")
-        
-        # Get player message and lowercase for pattern matching
-        message = context.player_message
-        
+
         # Perform basic pattern-based analysis first
-        analysis = self._initial_pattern_analysis(message)
+        analysis = self._initial_pattern_analysis(player_input)
         
         # Analyze knowledge requirements
         if analysis.get("requires_memory", True):

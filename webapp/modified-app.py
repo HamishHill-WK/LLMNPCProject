@@ -177,15 +177,15 @@ def api_interact():
         # If knowledge is required, retrieve it
         if knowledge_analysis.get("knowledge_required", False) or knowledge_analysis.get("requires_memory", False):
             print(f"Knowledge required for: {knowledge_analysis.get('knowledge_query', '')}")
-            # Use the existing knowledge engine to retrieve knowledge
-            knowledge_engine.assess_knowledge(
-                player_input=player_input,
-                character_id=game_state['current_npc'],
-                conversation_context=conversation_context,
-                data_dict=data,
-                ollama_service=ollama_manager
-            )
         
+        knowledge_engine.assess_knowledge(
+            player_input=player_input,
+            character_id=game_state['current_npc'],
+            conversation_context=conversation_context,
+            data_dict=data,
+            ollama_service=ollama_manager
+        )
+    
         # Get response from LLM
         response = ollama_manager.get_response(data, game_state, Mem_manager)
         
