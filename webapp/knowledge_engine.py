@@ -7,7 +7,7 @@ import re
 import logging
 import time
 from datetime import datetime
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -114,15 +114,11 @@ class KnowledgeEngine:
     """System for extracting, categorizing and storing knowledge from conversations"""
     
     def __init__(self):
-        """Initialize the knowledge engine"""
         self.knowledge_file = 'data/game_knowledge.json'
         self.knowledge_base = self._load_knowledge_base()
-        
-        # Create data directory if it doesn't exist
         os.makedirs('data', exist_ok=True)
     
     def _load_knowledge_base(self) -> Dict[str, Any]:
-        """Load the knowledge base from disk or create a new one"""
         if os.path.exists(self.knowledge_file):
             try:
                 with open(self.knowledge_file, 'r') as f:
@@ -150,143 +146,6 @@ class KnowledgeEngine:
         with open(self.knowledge_file, 'w') as f:
             json.dump(self.knowledge_base, f, indent=2)
     
-    def extract_knowledge(self, character_id: str, player_message: str, 
-                         conversation_context: str, data_dict: dict, ollama_service) -> Dict[str, Any]:
-        """
-        Analyze conversation to extract knowledge about various entities
-        
-        Args:
-            character_id: ID of the NPC who received the message
-            player_message: The player's message
-            conversation_context: Recent conversation history
-            data_dict: Dictionary containing model information
-            ollama_service: Service for generating LLM responses
-            
-        Returns:
-            Dictionary with extraction results
-        """
-        # Save original prompt
-        original_prompt = data_dict.get("prompt", "")
-        
-        # Create extraction prompt
-        extraction_prompt = self._create_extraction_prompt(player_message, conversation_context)
-        
-        
-        # Save extraction prompt to a text file
-        try:
-            # Create extraction_prompts directory if it doesn't exist
-            prompts_dir = 'data/extraction_prompts'
-            os.makedirs(prompts_dir, exist_ok=True)
-            
-            # Create filename with timestamp and character ID
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"{prompts_dir}/prompt_{character_id}_{timestamp}.txt"
-            
-            # Write prompt to file
-            with open(filename, 'w') as f:
-                f.write(f"Character ID: {character_id}\n")
-                f.write(f"Player message: {player_message}\n")
-                f.write(f"Timestamp: {datetime.now().isoformat()}\n")
-                f.write("-" * 50 + "\n")
-                f.write(extraction_prompt)
-            
-            logger.info(f"Saved extraction prompt to {filename}")
-        except Exception as e:
-            logger.error(f"Failed to save extraction prompt: {e}")
-        # Use LLM to extract knowledge
-        data_dict["prompt"] = extraction_prompt
-        
-        # Debug: Save data_dict to file for inspection
-        try:
-            # Create debug directory if it doesn't exist
-            debug_dir = 'data/debug'
-            os.makedirs(debug_dir, exist_ok=True)
-            
-            # Create filename with timestamp and character ID
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"{debug_dir}/data_dict_{character_id}_{timestamp}.json"
-            
-            # Write data_dict to file
-            with open(filename, 'w') as f:
-                json.dump(data_dict, f, indent=2, default=str)
-            
-            logger.info(f"Saved data_dict to {filename}")
-        except Exception as e:
-            logger.error(f"Failed to save data_dict: {e}")
-        minimal_game_state = {
-            "current_npc": character_id,
-            "current_location": "unknown",
-            "all_characters": {}
-        }
-        try:
-            # Get response from LLM
-            
-            
-            extraction_result = ollama_service.get_response(data_dict, minimal_game_state, None)
-            
-            # Restore original prompt
-            data_dict["prompt"] = original_prompt
-            
-            # Save extraction result to a text file
-            try:
-                # Create extraction_results directory if it doesn't exist
-                extraction_dir = 'data/extraction_results'
-                os.makedirs(extraction_dir, exist_ok=True)
-                
-                # Create filename with timestamp and character ID
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"{extraction_dir}/extraction_{character_id}_{timestamp}.txt"
-                
-                # Write result to file
-                with open(filename, 'w') as f:
-                    f.write(f"Character ID: {character_id}\n")
-                    f.write(f"Player message: {player_message}\n")
-                    f.write(f"Timestamp: {datetime.now().isoformat()}\n")
-                    f.write("-" * 50 + "\n")
-                    f.write(extraction_result)
-                
-                logger.info(f"Saved extraction result to {filename}")
-            except Exception as e:
-                logger.error(f"Failed to save extraction result: {e}")
-            
-            # Parse extraction result
-            extracted_items = self._parse_extraction_result(extraction_result)
-            
-            # Save parsed extracted items to file
-            try:
-                # Create extraction_results directory if it doesn't exist
-                extraction_dir = 'data/extraction_results'
-                os.makedirs(extraction_dir, exist_ok=True)
-                
-                # Create filename with timestamp and character ID
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"{extraction_dir}/items_{character_id}_{timestamp}.json"
-                
-                # Write extracted items to file
-                with open(filename, 'w') as f:
-                    json.dump(extracted_items, f, indent=2)
-                
-                logger.info(f"Saved {len(extracted_items)} extracted items to {filename}")
-            except Exception as e:
-                logger.error(f"Failed to save extracted items: {e}")
-            
-            if not extracted_items:
-                return {"new_knowledge": False, "items": []}
-            
-            # Update knowledge base
-            self._update_knowledge_base(character_id, extracted_items)
-            
-            return {
-                "new_knowledge": True,
-                "items": extracted_items
-            }
-            
-        except Exception as e:
-            logger.error(f"Error extracting knowledge: {e}")
-            # Restore original prompt
-            data_dict["prompt"] = original_prompt
-            return {"new_knowledge": False, "error": str(e)}
-    
     def _create_extraction_prompt(self, player_message: str, conversation_context: str) -> str:
         """Create a prompt for extracting knowledge"""
         # Build a multi-level list of entity types and their categories
@@ -295,7 +154,7 @@ class KnowledgeEngine:
             entity_categories_text += f"- {entity_type.upper()}:\n"
             for category in ENTITY_CATEGORIES[entity_type]:
                 entity_categories_text += f"  - {category}: Information about {entity_type}'s {category}\n"
-        
+                        
         return f"""<system>
 You are an ai system for analyzing a conversation to extract knowledge about various entities in a game world.
 
@@ -349,7 +208,7 @@ Any other format will be ignored by the system.
                 json_text = json_match.group(1)
                 if json_text.startswith('{'):
                     json_text = f"[{json_text}]"
-                json_text = json_match.group(1)
+               # json_text = json_match.group(1)
                 extracted_items = json.loads(json_text)
                 
                 # Validate and clean up items
@@ -612,7 +471,7 @@ Any other format will be ignored by the system.
         
         # Check if character has knowledge
         if "npc_knowledge" not in self.knowledge_base or \
-           character_id not in self.knowledge_base["npc_knowledge"]:
+            character_id not in self.knowledge_base["npc_knowledge"]:
             return result
         
         # Filter by entity type if specified
@@ -644,34 +503,7 @@ Any other format will be ignored by the system.
                     result[etype][category].append(knowledge_text)
         
         return result
-    
-    def format_player_knowledge(self, character_id: str) -> str:
-        """Format knowledge about the player for inclusion in prompts"""
-        knowledge = self.get_character_knowledge(character_id, entity_type="player")
-        
-        if not knowledge or "player" not in knowledge:
-            return "You don't know much about the player yet."
-        
-        # Format as sections by category
-        sections = []
-        
-        for category, items in knowledge["player"].items():
-            if not items:
-                continue
             
-            category_title = category.title()
-            section = f"{category_title}:\n"
-            
-            for item in items:
-                section += f"- {item}\n"
-            
-            sections.append(section)
-        
-        if not sections:
-            return "You don't know much about the player yet."
-            
-        return "\n".join(sections)
-    
     def format_entity_knowledge(self, character_id: str, entity_type: str, entity_name: str) -> str:
         """
         Format knowledge about a specific entity
@@ -756,74 +588,160 @@ Any other format will be ignored by the system.
             
         return "\n".join(sections)
 
+    # Function to use in prompt_engine.py
+    def assess_knowledge(self, player_input: str, character_id: str, 
+                        conversation_context: str, data_dict: dict, 
+                        ollama_service) -> Dict[str, Any]:
 
-# Function to use in prompt_engine.py
-def assess_knowledge(player_input: str, character_id: str, 
-                    conversation_context: str, data_dict: dict, 
-                    ollama_service) -> Dict[str, Any]:
-    """
-    Assess whether new knowledge can be extracted from a conversation
-    
-    Args:
-        player_input: The player's message
-        character_id: ID of the NPC receiving the message
-        conversation_context: Recent conversation context
-        data_dict: Dictionary containing model information
-        ollama_service: Service for generating LLM responses
+        print("Extracting knowledge...")
         
-    Returns:
-        Dictionary with assessment results
-    """
-    # Initialize knowledge engine if needed (singleton pattern)
-    if not hasattr(assess_knowledge, "_engine"):
-        assess_knowledge._engine = KnowledgeEngine()
-    
-    print("Extracting knowledge...")
-    print(f"KE - player : {player_input}")
-    
-    # Process the player input
-    return assess_knowledge._engine.extract_knowledge(
-        character_id=character_id,
-        player_message=player_input,
-        conversation_context=conversation_context,
-        data_dict=data_dict,
-        ollama_service=ollama_service
-    )
-
-
-def get_player_knowledge(character_id: str) -> str:
-    """
-    Get formatted knowledge about player for a character
-    
-    Args:
-        character_id: ID of the NPC
+        # Save original prompt
+        original_prompt = data_dict.get("prompt", "")
         
-    Returns:
-        Formatted string of knowledge for inclusion in prompts
-    """
-    # Initialize knowledge engine if needed
-    if not hasattr(assess_knowledge, "_engine"):
-        assess_knowledge._engine = KnowledgeEngine()
-    
-    # Get formatted knowledge
-    return assess_knowledge._engine.format_player_knowledge(character_id)
-
-
-def get_entity_knowledge(character_id: str, entity_type: str, entity_name: str) -> str:
-    """
-    Get formatted knowledge about a specific entity
-    
-    Args:
-        character_id: ID of the NPC
-        entity_type: Type of entity (location, npc, etc.)
-        entity_name: Name of the specific entity
+        # Create extraction prompt
+        extraction_prompt = self._create_extraction_prompt(player_input, conversation_context)
         
-    Returns:
-        Formatted string of knowledge about the entity
-    """
-    # Initialize knowledge engine if needed
-    if not hasattr(assess_knowledge, "_engine"):
-        assess_knowledge._engine = KnowledgeEngine()
-    
-    # Get formatted knowledge
-    return assess_knowledge._engine.format_entity_knowledge(character_id, entity_type, entity_name)
+        
+        # Save extraction prompt to a text file
+        try:
+            # Create extraction_prompts directory if it doesn't exist
+            prompts_dir = 'data/extraction_prompts'
+            os.makedirs(prompts_dir, exist_ok=True)
+            
+            # Create filename with timestamp and character ID
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{prompts_dir}/prompt_{character_id}_{timestamp}.txt"
+            
+            # Write prompt to file
+            with open(filename, 'w') as f:
+                f.write(f"Character ID: {character_id}\n")
+                f.write(f"Player message: {player_input}\n")
+                f.write(f"Timestamp: {datetime.now().isoformat()}\n")
+                f.write("-" * 50 + "\n")
+                f.write(extraction_prompt)
+            
+            #logger.info(f"Saved extraction prompt to {filename}")
+        except Exception as e:
+            logger.error(f"Failed to save extraction prompt: {e}")
+        # Use LLM to extract knowledge
+        data_dict["prompt"] = extraction_prompt
+        
+        # Debug: Save data_dict to file for inspection
+        try:
+            # Create debug directory if it doesn't exist
+            debug_dir = 'data/debug'
+            os.makedirs(debug_dir, exist_ok=True)
+            
+            # Create filename with timestamp and character ID
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{debug_dir}/data_dict_{character_id}_{timestamp}.json"
+            
+            # Write data_dict to file
+            with open(filename, 'w') as f:
+                json.dump(data_dict, f, indent=2, default=str)
+            
+            logger.info(f"Saved data_dict to {filename}")
+        except Exception as e:
+            logger.error(f"Failed to save data_dict: {e}")
+        minimal_game_state = {
+            "current_npc": character_id,
+            "current_location": "unknown",
+            "all_characters": {}
+        }
+        try:
+            # Get response from LLM
+            extraction_result = ollama_service.get_response(data_dict, minimal_game_state, None)
+            
+            # Restore original prompt
+            data_dict["prompt"] = original_prompt
+            
+            # Save extraction result to a text file
+            try:
+                # Create extraction_results directory if it doesn't exist
+                extraction_dir = 'data/extraction_results'
+                os.makedirs(extraction_dir, exist_ok=True)
+                
+                # Create filename with timestamp and character ID
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"{extraction_dir}/extraction_{character_id}_{timestamp}.txt"
+                
+                # Write result to file
+                with open(filename, 'w') as f:
+                    f.write(f"Character ID: {character_id}\n")
+                    f.write(f"Player message: {player_input}\n")
+                    f.write(f"Timestamp: {datetime.now().isoformat()}\n")
+                    f.write("-" * 50 + "\n")
+                    f.write(extraction_result)
+                
+                logger.info(f"Saved extraction result to {filename}")
+            except Exception as e:
+                logger.error(f"Failed to save extraction result: {e}")
+            
+            # Parse extraction result
+            extracted_items = self._parse_extraction_result(extraction_result)
+            
+            # Save parsed extracted items to file
+            try:
+                # Create extraction_results directory if it doesn't exist
+                extraction_dir = 'data/extraction_results'
+                os.makedirs(extraction_dir, exist_ok=True)
+                
+                # Create filename with timestamp and character ID
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"{extraction_dir}/items_{character_id}_{timestamp}.json"
+                
+                # Write extracted items to file
+                with open(filename, 'w') as f:
+                    json.dump(extracted_items, f, indent=2)
+                
+                logger.info(f"Saved {len(extracted_items)} extracted items to {filename}")
+            except Exception as e:
+                logger.error(f"Failed to save extracted items: {e}")
+            
+            if not extracted_items:
+                return {"new_knowledge": False, "items": []}
+            
+            # Update knowledge base
+            self._update_knowledge_base(character_id, extracted_items)
+            
+            return {
+                "new_knowledge": True,
+                "items": extracted_items
+            }
+            
+        except Exception as e:
+            logger.error(f"Error extracting knowledge: {e}")
+            # Restore original prompt
+            data_dict["prompt"] = original_prompt
+            return {"new_knowledge": False, "error": str(e)}
+
+    def get_player_knowledge(self, character_id: str) -> str:
+        """Format knowledge about the player for inclusion in prompts"""
+        knowledge = self.get_character_knowledge(character_id, entity_type="player")
+        
+        if not knowledge or "player" not in knowledge:
+            return "You don't know much about the player yet."
+        
+        # Format as sections by category
+        sections = []
+        
+        for category, items in knowledge["player"].items():
+            if not items:
+                continue
+            
+            category_title = category.title()
+            section = f"{category_title}:\n"
+            
+            for item in items:
+                section += f"- {item}\n"
+            
+            sections.append(section)
+        
+        if not sections:
+            return "You don't know much about the player yet."
+            
+        return "\n".join(sections)
+
+    def get_entity_knowledge(self, character_id: str, entity_type: str, entity_name: str) -> str:
+        # Get formatted knowledge
+        return self.format_entity_knowledge(character_id, entity_type, entity_name)
