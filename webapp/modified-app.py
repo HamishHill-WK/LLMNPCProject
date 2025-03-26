@@ -172,7 +172,9 @@ def api_interact():
             conversation_context=conversation_context,
         )
         
-        data["knowledge_analysis"] = knowledge_analysis
+        print(f"Knowledge analysis: {knowledge_analysis}")
+        
+        #data["knowledge_analysis"] = knowledge_analysis
         
         knowledge_engine.assess_knowledge(
             player_input=player_input,

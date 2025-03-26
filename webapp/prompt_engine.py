@@ -84,7 +84,7 @@ class Prompt_Engine:
         print(location_knowledge)
         
         # 3. Get knowledge about other NPCs mentioned in recent conversation
-        old_memory = mem_manager.get_memory_summary(character_id)
+        old_memory = self.memory_manager.get_memory_summary(character_id)
         conversation_text = memory_context #+ " " + player_input
         for npc_id in game_state['all_characters']:
             if npc_id != character_id and npc_id in conversation_text:
@@ -248,4 +248,4 @@ class Prompt_Engine:
         character_id = game_state['current_npc']
         player_input = data['prompt']
         
-        return self.construct_npc_prompt(character_id, player_input, game_state, mem_manager)
+        return self.construct_npc_prompt(character_id, player_input, game_state)
