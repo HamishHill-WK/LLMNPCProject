@@ -620,7 +620,7 @@ Any other format will be ignored by the system.
                 f.write("-" * 50 + "\n")
                 f.write(extraction_prompt)
             
-            logger.info(f"Saved extraction prompt to {filename}")
+            #logger.info(f"Saved extraction prompt to {filename}")
         except Exception as e:
             logger.error(f"Failed to save extraction prompt: {e}")
         # Use LLM to extract knowledge

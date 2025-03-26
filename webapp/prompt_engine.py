@@ -94,18 +94,12 @@ class Prompt_Engine:
                 npc_knowledge = self.knowledge_engine.get_entity_knowledge(character_id, "npc", npc_name)
                 if npc_knowledge and npc_knowledge != f"You don't know much about {npc_name}.":
                     knowledge_sections.append(f"ABOUT {npc_name.upper()}:\n{npc_knowledge}")
-        
-        # 4. Include knowledge about items, events or factions mentioned in conversation
-        # This is a simplified approach - a more sophisticated implementation could 
-        # use NLP to extract entity names from the conversation
+
         important_entities = [
-            # Add known important entities that might be mentioned
-            # Format: (entity_name, entity_type)
             ("red dragon", "event"),
             ("Northern Wars", "event"),
             ("ceremonial sword", "item"),
             ("city guard", "faction"),
-            # Add other important entities from your game world
         ]
         
         entity_knowledge = ""

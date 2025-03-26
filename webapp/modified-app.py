@@ -214,6 +214,7 @@ if __name__ == '__main__':
     character_data = prompt_engine.load_characters()
     Mem_manager.save_characters(character_data)
     Mem_manager.set_ollama(ollama_manager)
+    executive_planner.set_ollama(ollama_manager)
     game_state['all_characters'] = character_data
     simulation_state['all_characters'] = character_data    
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':

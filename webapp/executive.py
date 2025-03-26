@@ -27,7 +27,10 @@ class KnowledgeExecutivePlanner:
     
     def __init__(self, ollama_service=None, knowledge_engine=None):
         self.ollama_service = ollama_service
+        
         self.knowledge_engine = knowledge_engine
+        
+        print(f"Knowledge Executive Planner initialized type {type(self.ollama_service)}" )
         
         # Define common patterns for message classification
         self.patterns = {
@@ -47,7 +50,10 @@ class KnowledgeExecutivePlanner:
             'creature', 'item', 'spell', 'ability', 'rule', 'lore', 'legend',
             'craft', 'potion', 'weapon', 'armor', 'quest', 'mission'
         ]
-        
+    
+    def set_ollama(self, ollama_service):
+        self.ollama_service = ollama_service
+    
     def _initial_pattern_analysis(self, message: str) -> Dict[str, Any]:
         """Perform initial pattern-based analysis of the message"""
         print("initial pattern analysis")
@@ -169,9 +175,10 @@ Respond with ONLY a JSON object and nothing else.
         analysis = self._initial_pattern_analysis(message)
         
         # Analyze knowledge requirements
-        if analysis.get("requires_memory", True) and self.ollama_service and len(message) > 10:
-                llm_analysis = self._get_llm_analysis(context)
-                # Merge LLM analysis with pattern analysis, prioritizing LLM
-                analysis = {**analysis, **llm_analysis}
+        if analysis.get("requires_memory", True):
+            print("knowledge required")
+            llm_analysis = self._get_llm_analysis(context)
+            # Merge LLM analysis with pattern analysis, prioritizing LLM
+            analysis = {**analysis, **llm_analysis}
         
         return analysis
