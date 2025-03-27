@@ -171,9 +171,7 @@ def api_interact():
             game_state=game_state,
             conversation_context=conversation_context,
         )
-        
-        print(f"Knowledge analysis: {knowledge_analysis}")
-        
+                
         data["knowledge_analysis"] = knowledge_analysis
         
         knowledge_engine.assess_knowledge(
@@ -201,11 +199,17 @@ def api_interact():
             response, chain_of_thought = ollama_manager.clean_response(response)
             Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
             
-        return jsonify({
-            "response": response,
-            "game_state": game_state,
-            "knowledge_used": knowledge_analysis.get("knowledge_required", False)
-        })
+        if 'knowledge_query' in knowledge_analysis:            
+            return jsonify({
+                "response": response,
+                "game_state": game_state,
+                "knowledge_used": knowledge_analysis.get("knowledge_required", False)
+            })
+        else:
+            return jsonify({
+                "response": response,
+                "game_state": game_state
+            })
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500

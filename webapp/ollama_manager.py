@@ -2,7 +2,6 @@ import json
 import os
 import requests
 import datetime
-import prompt_engine 
 import re 
 
 class OllamaManager:
