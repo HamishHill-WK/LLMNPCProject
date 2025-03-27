@@ -59,7 +59,7 @@ class Prompt_Engine:
         with open('characters/tavernkeeper.json', 'w') as f:
             json.dump(sample_character, f, indent=2)
 
-    def construct_npc_prompt(self, character_id, player_input, game_state):
+    def construct_npc_prompt(self, character_id, player_input, game_state, data):
         """Construct a prompt for the NPC based on character data and memory"""
         if character_id not in self.characters:
             return "Error: Character not found."
@@ -69,19 +69,19 @@ class Prompt_Engine:
         if self.memory_manager is not None:
             memory_context = self.memory_manager.get_character_memory(game_state['all_characters'], character_id)
 
-        # Get comprehensive knowledge
         knowledge_sections = []
-        # 1. Player knowledge (always include)
         player_knowledge = self.knowledge_engine.get_player_knowledge(character_id)
         if player_knowledge and player_knowledge != "You don't know much about the player yet.":
             knowledge_sections.append(f"ABOUT THE PLAYER:\n{player_knowledge}")
 
-        # 2. Current location knowledge (always include)
         location_knowledge = self.knowledge_engine.get_entity_knowledge(character_id, "location", game_state['current_location'])
         if location_knowledge and location_knowledge != f"You don't know much about {game_state['current_location']}.":
             knowledge_sections.append(f"ABOUT {game_state['current_location'].upper()}:\n{location_knowledge}")
             
         print(location_knowledge)
+        
+        if 'relevant_knowledge' in data:
+            knowledge_sections.append(f"RELEVANT KNOWLEDGE:\n{data['relevant_knowledge']}")
         
         # 3. Get knowledge about other NPCs mentioned in recent conversation
         old_memory = self.memory_manager.get_memory_summary(character_id)
@@ -95,32 +95,13 @@ class Prompt_Engine:
                 if npc_knowledge and npc_knowledge != f"You don't know much about {npc_name}.":
                     knowledge_sections.append(f"ABOUT {npc_name.upper()}:\n{npc_knowledge}")
 
-        # important_entities = [
-        #     ("red dragon", "event"),
-        #     ("Northern Wars", "event"),
-        #     ("ceremonial sword", "item"),
-        #     ("city guard", "faction"),
-        # ]
-        
-        # entity_knowledge = ""
-        # for entity_name, entity_type in important_entities:
-        #     if entity_name.lower() in conversation_text.lower():
-        #         entity_knowledge = self.knowledge_engine.get_entity_knowledge(character_id, entity_type, entity_name)
-        #         if entity_knowledge and entity_knowledge != f"You don't know much about {entity_name}.":
-        #             knowledge_sections.append(f"ABOUT {entity_name.upper()}:\n{entity_knowledge}")
-        
-        # print(entity_knowledge)
-        
-        # 5. Include base character knowledge
         knowledge_section = ""
         if 'knowledge' in character:
             if isinstance(character['knowledge'], list):
                 knowledge_section = ', '.join(character['knowledge'])
             else:
                 knowledge_section = str(character['knowledge'])
-                
-        #TODO: Add knowledge about the player and other NPCs mentioned in the conversation
-        
+                        
         # Combine all knowledge sections
         combined_knowledge = "\n\n".join(knowledge_sections) if knowledge_sections else ""
     
@@ -250,4 +231,9 @@ class Prompt_Engine:
         character_id = game_state['current_npc']
         player_input = data['prompt']
         
-        return self.construct_npc_prompt(character_id, player_input, game_state)
+        knowledge_analysis = data.get("knowledge_analysis", {})
+        if knowledge_analysis.get("knowledge_required", False) and knowledge_analysis.get("requires_memory", False):
+            return self.construct_npc_prompt(character_id, player_input, game_state)
+        else:
+            
+            return self.construct_npc_prompt(character_id, player_input, game_state, data)

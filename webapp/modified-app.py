@@ -75,10 +75,7 @@ def change_simulation_npc():
         npc_id = data['npc_id']
         
         simulation_state[f"npc_{data['target_id']}"] = npc_id
-        
-        print(f"app sim npca: {simulation_state['npc_A']}")
-        print(f"app sim npcb: {simulation_state['npc_B']}")
-        
+
         return jsonify({
             "game_state": game_state
         })
@@ -172,7 +169,7 @@ def api_interact():
             conversation_context=conversation_context,
         )
                 
-        data["knowledge_analysis"] = knowledge_analysis
+        #data["knowledge_analysis"] = knowledge_analysis
         
         knowledge_engine.assess_knowledge(
             player_input=player_input,
@@ -194,7 +191,8 @@ def api_interact():
         
         elif knowledge_analysis['knowledge_required'] or knowledge_analysis['requires_memory']:
             print("knowledge required")
-            # Get response from LLM
+            if 'memory_search_keywords' in knowledge_analysis:
+                data['relevant_knowledge'] = knowledge_engine.search_knowledge_base(knowledge_analysis['memory_search_keywords'])
             response = ollama_manager.get_response(data, game_state, Mem_manager)
             response, chain_of_thought = ollama_manager.clean_response(response)
             Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])

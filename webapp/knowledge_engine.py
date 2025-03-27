@@ -1,6 +1,3 @@
-# knowledge_engine.py
-# Comprehensive knowledge extraction system for NPC memory management
-
 import json
 import os
 import re
@@ -9,7 +6,6 @@ import time
 from datetime import datetime
 from typing import Dict, List, Any
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("KnowledgeEngine")
 
@@ -111,8 +107,6 @@ ENTITY_CATEGORIES = {
 }
 
 class KnowledgeEngine:
-    """System for extracting, categorizing and storing knowledge from conversations"""
-    
     def __init__(self):
         self.knowledge_file = 'data/game_knowledge.json'
         self.knowledge_base = self._load_knowledge_base()
@@ -199,24 +193,17 @@ Any other format will be ignored by the system.
         
         try:
             # Try to find JSON in the response
-            print(f"Knowledge Engine - Parsing extraction result")
-            # print(extraction_text)
-            # print("\n")
             json_match = re.search(r'(\{.*?\}|\[.*?\])', extraction_text, re.DOTALL)
             if json_match:
-                #print(f"Knowledge Engine {json_match.group(1)}")
                 json_text = json_match.group(1)
                 if json_text.startswith('{'):
                     json_text = f"[{json_text}]"
-               # json_text = json_match.group(1)
                 extracted_items = json.loads(json_text)
-                
-                # Validate and clean up items
+
                 valid_items = []
                 for item in extracted_items:
                     # Skip if missing required fields
                     if not all(key in item for key in ["entity_type", "category", "entity_name", "information"]):
-                        #print(f"Knowledge Engine - Skipping item:\n {item}\n\n Failed to validate all required fields\n")
                         continue
                     
                     # Normalize entity type
@@ -262,7 +249,6 @@ Any other format will be ignored by the system.
                         "source": item.get("source", "Implied from conversation"),
                         "timestamp": time.time()
                     })
-                
                 return valid_items
             
             # If no JSON found, try to parse text format
@@ -503,57 +489,7 @@ Any other format will be ignored by the system.
                     result[etype][category].append(knowledge_text)
         
         return result
-            
-    def format_entity_knowledge(self, character_id: str, entity_type: str, entity_name: str) -> str:
-        """
-        Format knowledge about a specific entity
-        
-        Args:
-            character_id: ID of the NPC
-            entity_type: Type of entity (location, npc, etc.)
-            entity_name: Name of the specific entity
-            
-        Returns:
-            Formatted string of knowledge about the entity
-        """
-        knowledge = self.get_character_knowledge(character_id, entity_type=entity_type)
-        
-        if not knowledge or entity_type not in knowledge:
-            return f"You don't know much about {entity_name}."
-        
-        # Collect information about this specific entity
-        entity_info = {}
-        
-        for category, items in knowledge[entity_type].items():
-            entity_info[category] = []
-            
-            for item in items:
-                if entity_name.lower() in item.lower():
-                    # Extract just the information part after the entity name
-                    parts = item.split(":", 1)
-                    if len(parts) > 1:
-                        entity_info[category].append(parts[1].strip())
-        
-        # Format as sections by category
-        sections = []
-        
-        for category, items in entity_info.items():
-            if not items:
-                continue
-            
-            category_title = category.title()
-            section = f"{category_title}:\n"
-            
-            for item in items:
-                section += f"- {item}\n"
-            
-            sections.append(section)
-        
-        if not sections:
-            return f"You don't know much about {entity_name}."
-            
-        return "\n".join(sections)
-    
+
     def format_all_knowledge(self, character_id: str) -> str:
         """Format all knowledge a character has for debugging"""
         knowledge = self.get_character_knowledge(character_id)
@@ -561,7 +497,6 @@ Any other format will be ignored by the system.
         if not knowledge:
             return "This character doesn't have any knowledge yet."
         
-        # Format as sections by entity type and category
         sections = []
         
         for entity_type, categories in knowledge.items():
@@ -593,14 +528,11 @@ Any other format will be ignored by the system.
                         conversation_context: str, data_dict: dict, 
                         ollama_service) -> Dict[str, Any]:
 
-        print("Extracting knowledge...")
-        
         # Save original prompt
         original_prompt = data_dict.get("prompt", "")
         
         # Create extraction prompt
         extraction_prompt = self._create_extraction_prompt(player_input, conversation_context)
-        
         
         # Save extraction prompt to a text file
         try:
@@ -708,23 +640,19 @@ Any other format will be ignored by the system.
                 "new_knowledge": True,
                 "items": extracted_items
             }
-            
         except Exception as e:
             logger.error(f"Error extracting knowledge: {e}")
-            # Restore original prompt
             data_dict["prompt"] = original_prompt
             return {"new_knowledge": False, "error": str(e)}
 
     def get_player_knowledge(self, character_id: str) -> str:
         """Format knowledge about the player for inclusion in prompts"""
         knowledge = self.get_character_knowledge(character_id, entity_type="player")
-        
         if not knowledge or "player" not in knowledge:
             return "You don't know much about the player yet."
         
         # Format as sections by category
         sections = []
-        
         for category, items in knowledge["player"].items():
             if not items:
                 continue
@@ -743,7 +671,65 @@ Any other format will be ignored by the system.
         return "\n".join(sections)
 
     def get_entity_knowledge(self, character_id: str, entity_type: str, entity_name: str) -> str:
-        # Get formatted knowledge
-        return self.format_entity_knowledge(character_id, entity_type, entity_name)
+        knowledge = self.get_character_knowledge(character_id, entity_type=entity_type)
+        
+        if not knowledge or entity_type not in knowledge:
+            return f"You don't know much about {entity_name}."
+        
+        # Collect information about this specific entity
+        entity_info = {}
+        
+        for category, items in knowledge[entity_type].items():
+            entity_info[category] = []
+            
+            for item in items:
+                if entity_name.lower() in item.lower():
+                    # Extract just the information part after the entity name
+                    parts = item.split(":", 1)
+                    if len(parts) > 1:
+                        entity_info[category].append(parts[1].strip())
+        
+        # Format as sections by category
+        sections = []
+        for category, items in entity_info.items():
+            if not items:
+                continue
+            
+            category_title = category.title()
+            section = f"{category_title}:\n"
+            
+            for item in items:
+                section += f"- {item}\n"
+            
+            sections.append(section)
+        
+        if not sections:
+            return f"You don't know much about {entity_name}."
+            
+        return "\n".join(sections)
     
-    #TODO: Add function to search knowledge base for specific information
+    def search_knowledge_base(self, key_words: List[str]) -> List[str]:
+        """Search the knowledge base for information that matches the key words"""
+        # Load the knowledge base
+        with open('data/game_knowledge.json', 'r') as file:
+            knowledge_base = json.load(file)
+        
+        # Preprocess the knowledge base into an inverted index
+        inverted_index = {}
+        for entity_type in knowledge_base['global']:
+            for category in knowledge_base['global'][entity_type]:
+                for item in knowledge_base['global'][entity_type][category]:
+                    if 'information' in item:
+                        for word in item['information'].lower().split():
+                            if word not in inverted_index:
+                                inverted_index[word] = []
+                            inverted_index[word].append(item['information'])
+        
+        # Search for matching information
+        results = set()
+        for word in key_words:
+            lower_word = word.lower()
+            if lower_word in inverted_index:
+                results.update(inverted_index[lower_word])
+        logger.info(f"Search completed. Found {len(results)} matches for keywords: {key_words}")
+        return list(results)

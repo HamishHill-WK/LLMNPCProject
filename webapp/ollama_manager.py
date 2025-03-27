@@ -7,10 +7,10 @@ import re
 class OllamaManager:
     def __init__(self, prompt_engine):
         self.prompt_engine = prompt_engine
+        self.available_models = self.get_available_models()
+        self.selected_model = self.available_models[0] if self.available_models else None
         
     def get_response(self, data, game_state, Mem_manager):
-        #print(f"Getting response for: {data}")
-        # Save prompt to a text file
         if Mem_manager:
             data["prompt"] = self.prompt_engine.add_system_prompt(data, game_state, Mem_manager)
 
@@ -39,3 +39,19 @@ class OllamaManager:
         clean_response = re.sub(r'<think>.*?</think>', '', character_response, flags=re.DOTALL).strip()
         
         return clean_response, chain_of_thought
+    
+    def get_available_models(self):
+        """
+        Get the list of available models from Ollama.
+        
+        Returns:
+            list: A list of available model names.
+        """
+        try:
+            response = requests.get("http://localhost:11434/api/tags")
+            response.raise_for_status()  # Raises HTTPError for bad responses
+            data = response.json()
+            return [model['name'] for model in data.get('models', [])]
+        except requests.exceptions.RequestException as e:
+            print(f"Error connecting to Ollama: {str(e)}")
+            return []

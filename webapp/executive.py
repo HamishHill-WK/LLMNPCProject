@@ -158,7 +158,6 @@ Respond with ONLY a JSON object and nothing else.
         
         # Analyze knowledge requirements
         if analysis.get("requires_memory", True):
-            print("knowledge required")
             llm_analysis = self._get_llm_analysis(context)
             # Merge LLM analysis with pattern analysis, prioritizing LLM
             analysis = {**analysis, **llm_analysis}
