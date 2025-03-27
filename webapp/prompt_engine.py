@@ -137,10 +137,11 @@ class Prompt_Engine:
 
     If the player asks a question or makes a request, you should respond in character, building on the previous interactions and knowledge boundaries of {character['name']}.
     If the player says goodbye or otherwise ends the conversation, you should end the interaction naturally.
-    Ask the player questions to move the conversation forward and to learn about them. Build on previous interactions and progress the conversation naturally.
+    Ask the player questions to move the conversation forward and to learn about them. Build on previous interactions and knowledge to progress the conversation naturally..
     Respond in character as {character['name']}, using your established knowledge, speech pattern and personality. Don't write more than a paragraph.
     Previous interactions have been included for context. Try not to repeat previous responses unless it is absolutely necessary.
     Older interactions have been summarized for brevity.
+    Do not acknowledge that you are a character in a game or break the fourth wall.
     Give your reponse in the format provided below in the <character_response> tags.
     <player_message>
     Most recent Player message: {player_input}

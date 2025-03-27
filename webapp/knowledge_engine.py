@@ -714,22 +714,45 @@ Any other format will be ignored by the system.
         with open('data/game_knowledge.json', 'r') as file:
             knowledge_base = json.load(file)
         
+        # Split multi-word keywords into individual words
+        individual_words = []
+        for keyword in key_words:
+            individual_words.extend(keyword.lower().split())
+        
         # Preprocess the knowledge base into an inverted index
         inverted_index = {}
-        for entity_type in knowledge_base['global']:
-            for category in knowledge_base['global'][entity_type]:
-                for item in knowledge_base['global'][entity_type][category]:
+        # Process both global and NPC knowledge
+        for section in ['global', 'npc_knowledge']:
+            if section == 'global':
+                self._build_inverted_index(knowledge_base[section], inverted_index)
+            else:
+                # Handle the nested structure of npc_knowledge
+                for character_id in knowledge_base[section]:
+                    self._build_inverted_index(knowledge_base[section][character_id], inverted_index)
+        
+        # Search for matching information
+        results = set()
+        for word in individual_words:
+            if word in inverted_index:
+                results.update(inverted_index[word])
+                
+        logger.info(f"Search completed. Found {len(results)} matches for keywords: {individual_words}")
+        return list(results)
+
+    def _build_inverted_index(self, knowledge_section, inverted_index):
+        """Helper to build inverted index from a knowledge section"""
+        for entity_type in knowledge_section:
+            for category in knowledge_section[entity_type]:
+                for item in knowledge_section[entity_type][category]:
+                    # Index both entity_name and information
+                    if 'entity_name' in item:
+                        for word in item['entity_name'].lower().split():
+                            if word not in inverted_index:
+                                inverted_index[word] = []
+                            inverted_index[word].append(item.get('information', ''))
+                    
                     if 'information' in item:
                         for word in item['information'].lower().split():
                             if word not in inverted_index:
                                 inverted_index[word] = []
                             inverted_index[word].append(item['information'])
-        
-        # Search for matching information
-        results = set()
-        for word in key_words:
-            lower_word = word.lower()
-            if lower_word in inverted_index:
-                results.update(inverted_index[lower_word])
-        logger.info(f"Search completed. Found {len(results)} matches for keywords: {key_words}")
-        return list(results)
