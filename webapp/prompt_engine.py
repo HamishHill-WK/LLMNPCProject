@@ -95,21 +95,21 @@ class Prompt_Engine:
                 if npc_knowledge and npc_knowledge != f"You don't know much about {npc_name}.":
                     knowledge_sections.append(f"ABOUT {npc_name.upper()}:\n{npc_knowledge}")
 
-        important_entities = [
-            ("red dragon", "event"),
-            ("Northern Wars", "event"),
-            ("ceremonial sword", "item"),
-            ("city guard", "faction"),
-        ]
+        # important_entities = [
+        #     ("red dragon", "event"),
+        #     ("Northern Wars", "event"),
+        #     ("ceremonial sword", "item"),
+        #     ("city guard", "faction"),
+        # ]
         
-        entity_knowledge = ""
-        for entity_name, entity_type in important_entities:
-            if entity_name.lower() in conversation_text.lower():
-                entity_knowledge = self.knowledge_engine.get_entity_knowledge(character_id, entity_type, entity_name)
-                if entity_knowledge and entity_knowledge != f"You don't know much about {entity_name}.":
-                    knowledge_sections.append(f"ABOUT {entity_name.upper()}:\n{entity_knowledge}")
+        # entity_knowledge = ""
+        # for entity_name, entity_type in important_entities:
+        #     if entity_name.lower() in conversation_text.lower():
+        #         entity_knowledge = self.knowledge_engine.get_entity_knowledge(character_id, entity_type, entity_name)
+        #         if entity_knowledge and entity_knowledge != f"You don't know much about {entity_name}.":
+        #             knowledge_sections.append(f"ABOUT {entity_name.upper()}:\n{entity_knowledge}")
         
-        print(entity_knowledge)
+        # print(entity_knowledge)
         
         # 5. Include base character knowledge
         knowledge_section = ""
@@ -118,6 +118,8 @@ class Prompt_Engine:
                 knowledge_section = ', '.join(character['knowledge'])
             else:
                 knowledge_section = str(character['knowledge'])
+                
+        #TODO: Add knowledge about the player and other NPCs mentioned in the conversation
         
         # Combine all knowledge sections
         combined_knowledge = "\n\n".join(knowledge_sections) if knowledge_sections else ""

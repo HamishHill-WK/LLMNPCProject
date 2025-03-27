@@ -745,3 +745,5 @@ Any other format will be ignored by the system.
     def get_entity_knowledge(self, character_id: str, entity_type: str, entity_name: str) -> str:
         # Get formatted knowledge
         return self.format_entity_knowledge(character_id, entity_type, entity_name)
+    
+    #TODO: Add function to search knowledge base for specific information

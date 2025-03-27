@@ -174,7 +174,7 @@ def api_interact():
         
         print(f"Knowledge analysis: {knowledge_analysis}")
         
-        #data["knowledge_analysis"] = knowledge_analysis
+        data["knowledge_analysis"] = knowledge_analysis
         
         knowledge_engine.assess_knowledge(
             player_input=player_input,
