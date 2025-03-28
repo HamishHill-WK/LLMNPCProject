@@ -49,7 +49,6 @@ class MemoryManager:
         
         # Remove <character_response> tags if present
         dialogue = character_response.replace('<character_response>', '').replace('</character_response>', '').strip()
-        #print(f"characters: {self.characters}")
         # Only try to remove character name if it exists in the characters dictionary
         if character_id in self.characters and 'name' in self.characters[character_id]:
             dialogue = dialogue.replace(f"{self.characters[character_id]['name']}: ", "").strip()
@@ -75,12 +74,15 @@ class MemoryManager:
         }
         
         self.memories[character_id]["short_term"].append(memory_item)
-        
         # # If short-term memory exceeds limit, move oldest to long-term memory
         if len(self.memories[character_id]["short_term"]) > self.max_short_term:
             # For now, just move the oldest memory directly to long-term
             # In a more advanced system, you would summarize a batch of memories
             oldest_memory = self.memories[character_id]["short_term"].pop(0)
+            
+            if "long_term" not in self.memories[character_id]:
+                self.memories[character_id]["long_term"] = []
+            
             self.memories[character_id]["long_term"].append(oldest_memory)
             if len (self.memories[character_id]["long_term"]) > self.max_long_term:
                 self.memories[character_id]["summary"] = self.summarize_long_term(character_id)
@@ -94,16 +96,17 @@ class MemoryManager:
         if character_id not in self.memories:
             return "No previous interactions."
         
-        memory_text = []
-        
+        memory_text = []        
         # Add short-term memories
-        for memory in self.memories[character_id]["short_term"]:
-            memory_text.append(f"{memory['other_id']}: {memory['other_message']}")
-            memory_text.append(f"{characters[character_id]['name']}: {memory['character_response']}")
+        if 'short_term' in self.memories[character_id]:
+            for memory in self.memories[character_id]["short_term"]:
+                memory_text.append(f"{memory['other_id']}: {memory['other_message']}")
+                memory_text.append(f"{characters[character_id]['name']}: {memory['character_response']}")
             
-        for memory in self.memories[character_id]["long_term"]:
-            memory_text.append(f"{memory['other_id']}: {memory['other_message']}")
-            memory_text.append(f"{characters[character_id]['name']}: {memory['character_response']}")
+        if 'long_term' in self.memories[character_id]:
+            for memory in self.memories[character_id]["long_term"]:
+                memory_text.append(f"{memory['other_id']}: {memory['other_message']}")
+                memory_text.append(f"{characters[character_id]['name']}: {memory['character_response']}")
         
         return "\n".join(memory_text)
     
@@ -124,10 +127,11 @@ class MemoryManager:
         
         summary = ""
         character_name = self.characters[character_id]['name']
-        for memory in self.memories[character_id]["long_term"]:
-            summary += f"{memory['other_id']}: {memory['other_message']}\n"
-            summary += f"{character_name}: {memory['character_response']}\n"
-        
+        if 'long_term' in self.memories[character_id]:
+            for memory in self.memories[character_id]["long_term"]:
+                summary += f"{memory['other_id']}: {memory['other_message']}\n"
+                summary += f"{character_name}: {memory['character_response']}\n"
+            
         old_summary = ""
         
         if "summary" in self.memories[character_id]:
@@ -163,5 +167,3 @@ Resolve any contradictions by favoring newer information.
         response = self.ollama.clean_response(response)
         
         return response
-        
-

@@ -88,25 +88,6 @@ class KnowledgeExecutivePlanner:
         print("get keywords")
         return [word for word in message.split() if len(word) > 2 and word not in ["remember", "recall", "said", "told", "mentioned", "the", "a", "yes" ] and word not in self.patterns['greeting'] and word not in self.patterns['farewell'] and word not in self.patterns['question']]
 
-    
-    # def _get_npc_knowledge_boundaries(self, character_id: str, game_state: Dict[str, Any]) -> List[str]:
-    #     print("get npc knowledge boundaries")
-    #     # Check if the game state has character data
-    #     if "all_characters" in game_state and character_id in game_state["all_characters"]:
-    #         character_data = game_state["all_characters"].get(character_id, {})
-    #         if "knowledge" in character_data:
-    #             if isinstance(character_data["knowledge"], list):
-    #                 return character_data["knowledge"]
-    #             else:
-    #                 return [character_data["knowledge"]]
-            
-    #         # Also check for knowledge_boundaries
-    #         if "knowledge_boundaries" in character_data:
-    #             return character_data["knowledge_boundaries"]
-        
-    #     # Return empty list if no knowledge boundaries found
-    #     return []
-    
     def _get_llm_analysis(self, context: DialogueContext) -> Dict[str, Any]:
         print("get llm analysis")
         """Get enhanced analysis using the LLM"""
@@ -124,6 +105,7 @@ Analyze this message and provide a JSON response with the following:
 3. knowledge_query: If knowledge is required, what specific information needs to be retrieved
 4. memory_search_strategy: How should the NPC search for relevant memories [semantic, keyword, none]
 5. memory_search_keywords: Keywords or phrases that could be used to search for relevant memories
+6. new_knowledge: Does the text contain information which might be useful to the npc later? [true/false]
 Respond with ONLY a JSON object and nothing else.
 </system>
 """
@@ -164,7 +146,6 @@ Respond with ONLY a JSON object and nothing else.
     # Function for use in app.py
     def analyze_for_knowledge(self, player_input: str, character_id: str, 
                             game_state: Dict[str, Any], conversation_context: str) -> Dict[str, Any]:
-
         context = DialogueContext(
             character_id=character_id,
             player_message=player_input,
@@ -177,7 +158,6 @@ Respond with ONLY a JSON object and nothing else.
         
         # Analyze knowledge requirements
         if analysis.get("requires_memory", True):
-            print("knowledge required")
             llm_analysis = self._get_llm_analysis(context)
             # Merge LLM analysis with pattern analysis, prioritizing LLM
             analysis = {**analysis, **llm_analysis}
