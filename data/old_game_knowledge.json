@@ -1,0 +1,843 @@
+{
+  "global": {
+    "player": {
+      "identity": [
+        {
+          "entity_name": "Niko",
+          "information": "Niko is a merchant from Windvale seeking to sell his wares.",
+          "confidence": 5,
+          "first_learned": 1742662585.4404132,
+          "last_updated": 1742662585.4404132,
+          "sources": [
+            "Hello nice to meet you. My name is Niko, I am a merchant from Windvale seeking to sell my wares."
+          ]
+        },
+        {
+          "entity_name": "Player",
+          "information": "The player is asking about their name.",
+          "confidence": 5,
+          "first_learned": 1742989877.531627,
+          "last_updated": 1742989877.531627,
+          "sources": [
+            "what is my name?"
+          ]
+        },
+        {
+          "entity_name": "",
+          "information": "The player does not know their own name and believes that only by someone saying it can a curse be lifted.",
+          "confidence": 5,
+          "first_learned": 1742990327.2315497,
+          "last_updated": 1742990327.2315497,
+          "sources": [
+            "The player's message directly states their uncertainty about their name and the effect of others knowing it."
+          ]
+        },
+        {
+          "entity_name": "Player",
+          "information": "The player's name is needed to lift a curse.",
+          "confidence": 5,
+          "first_learned": 1742990665.434413,
+          "last_updated": 1742990665.434413,
+          "sources": [
+            "The player's message directly mentions the need for their name to lift a curse."
+          ]
+        },
+        {
+          "entity_name": "Player",
+          "information": "The player is seeking knowledge about their own identity, specifically their name.",
+          "confidence": 4,
+          "first_learned": 1742990770.9630075,
+          "last_updated": 1742990770.9630075,
+          "sources": [
+            "The player explicitly asks, 'will you please tell me what my name is?'"
+          ]
+        },
+        {
+          "entity_name": "",
+          "information": "The player greeted someone with a 'hi' message.",
+          "confidence": 1,
+          "first_learned": 1743026555.8178308,
+          "last_updated": 1743026555.8178308,
+          "sources": [
+            ""
+          ]
+        },
+        {
+          "entity_name": "NO_ENTITY",
+          "information": "No relevant information was provided in this message.",
+          "confidence": 1,
+          "first_learned": 1743026685.219864,
+          "last_updated": 1743026685.219864,
+          "sources": [
+            "hi"
+          ]
+        },
+        {
+          "entity_name": "",
+          "information": "No specific player identity information is provided.",
+          "confidence": 1,
+          "first_learned": 1743027009.8446527,
+          "last_updated": 1743027009.8446527,
+          "sources": [
+            "The message 'hi' does not contain any identifiable player information."
+          ]
+        },
+        {
+          "entity_name": "",
+          "information": "The player is asking for their name.",
+          "confidence": 1,
+          "first_learned": 1743096945.998619,
+          "last_updated": 1743096945.998619,
+          "sources": [
+            "The player's message: 'What's my name?'"
+          ]
+        },
+        {
+          "entity_name": "windvale",
+          "information": "The player identifies themselves as a merchant from Windvale.",
+          "confidence": 5,
+          "first_learned": 1743097070.022324,
+          "last_updated": 1743097070.022324,
+          "sources": [
+            "Sure you do, I'm a merchant from windvale"
+          ]
+        },
+        {
+          "entity_name": "Player (generic)",
+          "information": "The player used casual slang 'whaddup' indicating potential social interaction.",
+          "confidence": 2,
+          "first_learned": 1743097340.9149387,
+          "last_updated": 1743097340.9149387,
+          "sources": [
+            "Direct player communication"
+          ]
+        },
+        {
+          "entity_name": "High Elves",
+          "information": "The player identifies as a high elf.",
+          "confidence": 5,
+          "first_learned": 1743106077.102774,
+          "last_updated": 1743106077.102774,
+          "sources": [
+            "The player's message: \"have you heard of the high elves?\""
+          ]
+        }
+      ],
+      "background": [],
+      "abilities": [],
+      "possessions": [
+        {
+          "entity_name": "Player's Items",
+          "information": "The player is selling various items such as gems and jewels.",
+          "confidence": 5,
+          "first_learned": 1742662857.1815186,
+          "last_updated": 1742662857.1815186,
+          "sources": [
+            "As I said I'm here to sell various items like gems and jewels."
+          ]
+        }
+      ],
+      "goals": [],
+      "relationships": [
+        {
+          "entity_name": "Player",
+          "information": "The player has a relationship with an NPC, as they address them directly and inquire about their identity.",
+          "confidence": 3,
+          "first_learned": 1742665335.44823,
+          "last_updated": 1742665335.44823,
+          "sources": [
+            "The player refers to an unknown 'miss' and asks for their name, indicating a relationship."
+          ]
+        }
+      ],
+      "preferences": [
+        {
+          "entity_name": "Player's preferences regarding proof and evidence",
+          "information": "The player is uncertain about proving something, reflecting a preference for honesty or a goal related to that uncertainty.",
+          "confidence": 4,
+          "first_learned": 1742665199.7187817,
+          "last_updated": 1742665199.7187817,
+          "sources": [
+            "The message directly addresses the player's mindset towards proof."
+          ]
+        },
+        {
+          "entity_name": "Player",
+          "information": "The player does not like magic.",
+          "confidence": 5,
+          "first_learned": 1743031957.1989963,
+          "last_updated": 1743031957.1989963,
+          "sources": [
+            "The player's message directly states their dislike for magic."
+          ]
+        },
+        {
+          "entity_name": "Player",
+          "information": "The player has expressed curiosity or interest in magic by asking why they don't like it.",
+          "confidence": 5,
+          "first_learned": 1743032278.2299924,
+          "last_updated": 1743032278.2299924,
+          "sources": [
+            "The player's message: \"Why don't you like magic?\""
+          ]
+        }
+      ],
+      "knowledge": []
+    },
+    "npc": {
+      "identity": [
+        {
+          "entity_name": "Lady Oletta",
+          "information": "Lady Oletta was a fair maiden of Duke Raden's court.",
+          "confidence": 5,
+          "first_learned": 1742663206.8661332,
+          "last_updated": 1742663206.8661332,
+          "sources": [
+            "The message explicitly states her identity as Lady Oletta."
+          ]
+        },
+        {
+          "entity_name": "Lady Oletta",
+          "information": "Lady Oletta was a respected figure known for her political acumen and military strategies.",
+          "confidence": 3,
+          "first_learned": 1743106246.7167695,
+          "last_updated": 1743106246.7167695,
+          "sources": [
+            "Common traits of notable NPCs in narrative-driven contexts."
+          ]
+        },
+        {
+          "entity_name": "Lady Oletta",
+          "information": "Lady Oletta was a notable noblewoman known for her influence and status in the game world.",
+          "confidence": 3,
+          "first_learned": 1743106802.4437926,
+          "last_updated": 1743106802.4437926,
+          "sources": [
+            "The player's question implies an understanding of Lady Oletta's prominence."
+          ]
+        },
+        {
+          "entity_name": "Lady Oletta",
+          "information": "NO_INFORMATION",
+          "confidence": 1,
+          "first_learned": 1743107026.6852944,
+          "last_updated": 1743107026.6852944,
+          "sources": [
+            "NO_SOURCE"
+          ]
+        },
+        {
+          "entity_name": "Lady Oletta",
+          "information": "Lady Oletta is a prominent figure in the game world, known for her leadership and influence.",
+          "confidence": 3,
+          "first_learned": 1743109551.9490309,
+          "last_updated": 1743109551.9490309,
+          "sources": [
+            "General lore about notable NPCs"
+          ]
+        }
+      ],
+      "location": [],
+      "relationship": [
+        {
+          "entity_name": "",
+          "information": "The NPC has managed to move on from the wars.",
+          "confidence": 4,
+          "first_learned": 1743013960.6949866,
+          "last_updated": 1743013960.6949866,
+          "sources": [
+            "It's good that you've managed to move on from the wars."
+          ]
+        }
+      ],
+      "behavior": [
+        {
+          "entity_name": "Tavern Keeper",
+          "information": "The Tavern Keeper does not tell their name to customers and prospective customers, which is considered rude.",
+          "confidence": 3,
+          "first_learned": 1742665460.3378718,
+          "last_updated": 1742665460.3378718,
+          "sources": [
+            "The player's message implying that the tavern keeper's behavior is considered rude for not revealing their name."
+          ]
+        }
+      ],
+      "knowledge": [],
+      "background": [
+        {
+          "entity_name": "[Name of NPC]",
+          "information": "The NPC has served in the army.",
+          "confidence": 3,
+          "first_learned": 1743005660.904039,
+          "last_updated": 1743005660.904039,
+          "sources": [
+            "Have you served in the army?"
+          ]
+        },
+        {
+          "entity_name": "[Unnamed NPC]",
+          "information": "The NPC is known to have served in a war.",
+          "confidence": 3,
+          "first_learned": 1743005780.390212,
+          "last_updated": 1743005780.390212,
+          "sources": [
+            "The player's question implies that the NPC has a background related to military service."
+          ]
+        },
+        {
+          "entity_name": "Kael Vorn",
+          "information": "Kael Vorn served in the War of the Ashen Blade.",
+          "confidence": 5,
+          "first_learned": 1743018546.1244473,
+          "last_updated": 1743018546.1244473,
+          "sources": [
+            "The player's previous conversation where Kael's background was mentioned."
+          ]
+        },
+        {
+          "entity_name": "The NPC in question",
+          "information": "The player is interested in knowing more about the NPC's past experiences and background.",
+          "confidence": 2,
+          "first_learned": 1743031417.7343123,
+          "last_updated": 1743031417.7343123,
+          "sources": [
+            "Player's message expressing curiosity about the NPC's past"
+          ]
+        },
+        {
+          "entity_name": "Tavern Keeper",
+          "information": "The Tavern Keeper held a previous role before becoming a tavern keeper.",
+          "confidence": 4,
+          "first_learned": 1743031517.8589118,
+          "last_updated": 1743031517.8589118,
+          "sources": [
+            "The player's question about the Tavern Keeper's past role."
+          ]
+        },
+        {
+          "entity_name": "Lady Oletta",
+          "information": "Lady Oletta is a noblewoman from a prominent family with a rich history in the game world's political landscape.",
+          "confidence": 5,
+          "first_learned": 1743107746.9417808,
+          "last_updated": 1743107746.9417808,
+          "sources": [
+            "Player's question about Lady Oletta's identity"
+          ]
+        }
+      ],
+      "abilities": []
+    },
+    "location": {
+      "description": [
+        {
+          "entity_name": "Windvale",
+          "information": "Windvale is a village located to the west of the current location.",
+          "confidence": 5,
+          "first_learned": 1742662857.1815186,
+          "last_updated": 1742662857.1815186,
+          "sources": [
+            "Windvale is a little village to the west of here."
+          ]
+        }
+      ],
+      "inhabitants": [],
+      "dangers": [],
+      "resources": [],
+      "accessibility": [
+        {
+          "entity_name": "Windvale",
+          "information": "Traveling from the current location to Windvale by horseback would take about 7 days if one sticks to the road.",
+          "confidence": 5,
+          "first_learned": 1742662857.1815186,
+          "last_updated": 1742662857.1815186,
+          "sources": [
+            "about 7 days travel on horse back if one sticks to the road."
+          ]
+        }
+      ],
+      "history": [],
+      "atmosphere": []
+    },
+    "event": {
+      "participants": [],
+      "outcome": [],
+      "timeframe": [
+        {
+          "entity_name": "Celebration of Lady Oletta's 18th birthday",
+          "information": "The event took place during the celebration of her 18th birthday.",
+          "confidence": 5,
+          "first_learned": 1742663206.8661332,
+          "last_updated": 1742663206.8661332,
+          "sources": [
+            "The message explicitly mentions the timeframe."
+          ]
+        }
+      ],
+      "location": [],
+      "cause": [
+        {
+          "entity_name": "Celebration of Lady Oletta's 18th birthday",
+          "information": "Lady Oletta cast the gloves into the crowd during the celebration to spite her lover.",
+          "confidence": 5,
+          "first_learned": 1742663206.8661332,
+          "last_updated": 1742663206.8661332,
+          "sources": [
+            "The message provides the cause and context of the event."
+          ]
+        }
+      ],
+      "significance": []
+    },
+    "item": {
+      "description": [
+        {
+          "entity_name": "the Gloves of Lady Oletta",
+          "information": "Lady Oletta wore the gloves, which were once a gift to her by her lover.",
+          "confidence": 5,
+          "first_learned": 1742663206.8661332,
+          "last_updated": 1742663206.8661332,
+          "sources": [
+            "The message describes the possession and its origin."
+          ]
+        }
+      ],
+      "properties": [
+        {
+          "entity_name": "Silver Earrings",
+          "information": "The silver earrings are from Nassos.",
+          "confidence": 5,
+          "first_learned": 1742662996.0909722,
+          "last_updated": 1742662996.0909722,
+          "sources": [
+            "Would silver earings from Nassos suit you, madam? No trouble to purchase anything from me I only ask for a fair price, the merchant's life can be full of danger and I aim to be properly compensated."
+          ]
+        }
+      ],
+      "origin": [],
+      "value": [],
+      "ownership": [],
+      "effects": []
+    },
+    "faction": {
+      "members": [],
+      "goals": [],
+      "territory": [],
+      "relationships": [],
+      "resources": [],
+      "history": [],
+      "reputation": []
+    },
+    "lore": {
+      "historical": [
+        {
+          "entity_name": "The Duchy/Palace",
+          "information": "The Duchy has a famous tale about a fair princess who was beloved throughout the land.",
+          "confidence": 5,
+          "first_learned": 1742665099.340165,
+          "last_updated": 1742665099.340165,
+          "sources": [
+            "The player's message explicitly mentions the tale and its connection to historical lore."
+          ]
+        },
+        {
+          "entity_name": "northern wars",
+          "information": "Several factions and groups from the northern regions engaged in conflicts known as the northern wars.",
+          "confidence": 4,
+          "first_learned": 1743013667.8055065,
+          "last_updated": 1743013667.8055065,
+          "sources": [
+            "The player's question about the northern wars implies a focus on historical lore."
+          ]
+        },
+        {
+          "entity_name": "",
+          "information": "",
+          "confidence": 1,
+          "first_learned": 1743027099.859526,
+          "last_updated": 1743027099.859526,
+          "sources": [
+            ""
+          ]
+        }
+      ],
+      "cultural": [],
+      "magical": [],
+      "religious": [],
+      "geographical": [],
+      "political": [],
+      "technological": []
+    },
+    "quest": {
+      "objective": [],
+      "giver": [],
+      "rewards": [],
+      "location": [],
+      "requirements": [],
+      "obstacles": [],
+      "status": []
+    }
+  },
+  "npc_knowledge": {
+    "tavernkeeper": {
+      "player": {
+        "identity": [
+          {
+            "entity_name": "Niko",
+            "information": "Niko is a merchant from Windvale seeking to sell his wares.",
+            "confidence": 5,
+            "first_learned": 1742662585.4404132,
+            "last_updated": 1742662585.4404132
+          },
+          {
+            "entity_name": "Player",
+            "information": "The player is asking about their name.",
+            "confidence": 5,
+            "first_learned": 1742989877.531627,
+            "last_updated": 1742989877.531627
+          },
+          {
+            "entity_name": "",
+            "information": "The player does not know their own name and believes that only by someone saying it can a curse be lifted.",
+            "confidence": 5,
+            "first_learned": 1742990327.2315497,
+            "last_updated": 1742990327.2315497
+          },
+          {
+            "entity_name": "Player",
+            "information": "The player's name is needed to lift a curse.",
+            "confidence": 5,
+            "first_learned": 1742990665.434413,
+            "last_updated": 1742990665.434413
+          },
+          {
+            "entity_name": "Player",
+            "information": "The player is seeking knowledge about their own identity, specifically their name.",
+            "confidence": 4,
+            "first_learned": 1742990770.9630075,
+            "last_updated": 1742990770.9630075
+          },
+          {
+            "entity_name": "",
+            "information": "The player greeted someone with a 'hi' message.",
+            "confidence": 1,
+            "first_learned": 1743026555.8178308,
+            "last_updated": 1743026555.8178308
+          },
+          {
+            "entity_name": "NO_ENTITY",
+            "information": "No relevant information was provided in this message.",
+            "confidence": 1,
+            "first_learned": 1743026685.219864,
+            "last_updated": 1743026685.219864
+          },
+          {
+            "entity_name": "",
+            "information": "No specific player identity information is provided.",
+            "confidence": 1,
+            "first_learned": 1743027009.8446527,
+            "last_updated": 1743027009.8446527
+          },
+          {
+            "entity_name": "",
+            "information": "The player is asking for their name.",
+            "confidence": 1,
+            "first_learned": 1743096945.998619,
+            "last_updated": 1743096945.998619
+          },
+          {
+            "entity_name": "windvale",
+            "information": "The player identifies themselves as a merchant from Windvale.",
+            "confidence": 5,
+            "first_learned": 1743097070.022324,
+            "last_updated": 1743097070.022324
+          },
+          {
+            "entity_name": "Player (generic)",
+            "information": "The player used casual slang 'whaddup' indicating potential social interaction.",
+            "confidence": 2,
+            "first_learned": 1743097340.9149387,
+            "last_updated": 1743097340.9149387
+          },
+          {
+            "entity_name": "High Elves",
+            "information": "The player identifies as a high elf.",
+            "confidence": 5,
+            "first_learned": 1743106077.102774,
+            "last_updated": 1743106077.102774
+          }
+        ],
+        "background": [],
+        "abilities": [],
+        "possessions": [
+          {
+            "entity_name": "Player's Items",
+            "information": "The player is selling various items such as gems and jewels.",
+            "confidence": 5,
+            "first_learned": 1742662857.1815186,
+            "last_updated": 1742662857.1815186
+          }
+        ],
+        "goals": [],
+        "relationships": [
+          {
+            "entity_name": "Player",
+            "information": "The player has a relationship with an NPC, as they address them directly and inquire about their identity.",
+            "confidence": 3,
+            "first_learned": 1742665335.44823,
+            "last_updated": 1742665335.44823
+          }
+        ],
+        "preferences": [
+          {
+            "entity_name": "Player's preferences regarding proof and evidence",
+            "information": "The player is uncertain about proving something, reflecting a preference for honesty or a goal related to that uncertainty.",
+            "confidence": 4,
+            "first_learned": 1742665199.7187817,
+            "last_updated": 1742665199.7187817
+          },
+          {
+            "entity_name": "Player",
+            "information": "The player does not like magic.",
+            "confidence": 5,
+            "first_learned": 1743031957.1989963,
+            "last_updated": 1743031957.1989963
+          },
+          {
+            "entity_name": "Player",
+            "information": "The player has expressed curiosity or interest in magic by asking why they don't like it.",
+            "confidence": 5,
+            "first_learned": 1743032278.2299924,
+            "last_updated": 1743032278.2299924
+          }
+        ],
+        "knowledge": []
+      },
+      "npc": {
+        "identity": [
+          {
+            "entity_name": "Lady Oletta",
+            "information": "Lady Oletta was a fair maiden of Duke Raden's court.",
+            "confidence": 5,
+            "first_learned": 1742663206.8661332,
+            "last_updated": 1742663206.8661332
+          },
+          {
+            "entity_name": "Lady Oletta",
+            "information": "Lady Oletta was a respected figure known for her political acumen and military strategies.",
+            "confidence": 3,
+            "first_learned": 1743106246.7167695,
+            "last_updated": 1743106246.7167695
+          },
+          {
+            "entity_name": "Lady Oletta",
+            "information": "Lady Oletta was a notable noblewoman known for her influence and status in the game world.",
+            "confidence": 3,
+            "first_learned": 1743106802.4437926,
+            "last_updated": 1743106802.4437926
+          },
+          {
+            "entity_name": "Lady Oletta",
+            "information": "NO_INFORMATION",
+            "confidence": 1,
+            "first_learned": 1743107026.6852944,
+            "last_updated": 1743107026.6852944
+          },
+          {
+            "entity_name": "Lady Oletta",
+            "information": "Lady Oletta is a prominent figure in the game world, known for her leadership and influence.",
+            "confidence": 3,
+            "first_learned": 1743109551.9490309,
+            "last_updated": 1743109551.9490309
+          }
+        ],
+        "location": [],
+        "relationship": [
+          {
+            "entity_name": "",
+            "information": "The NPC has managed to move on from the wars.",
+            "confidence": 4,
+            "first_learned": 1743013960.6949866,
+            "last_updated": 1743013960.6949866
+          }
+        ],
+        "behavior": [
+          {
+            "entity_name": "Tavern Keeper",
+            "information": "The Tavern Keeper does not tell their name to customers and prospective customers, which is considered rude.",
+            "confidence": 3,
+            "first_learned": 1742665460.3378718,
+            "last_updated": 1742665460.3378718
+          }
+        ],
+        "knowledge": [],
+        "background": [
+          {
+            "entity_name": "[Name of NPC]",
+            "information": "The NPC has served in the army.",
+            "confidence": 3,
+            "first_learned": 1743005660.904039,
+            "last_updated": 1743005660.904039
+          },
+          {
+            "entity_name": "[Unnamed NPC]",
+            "information": "The NPC is known to have served in a war.",
+            "confidence": 3,
+            "first_learned": 1743005780.390212,
+            "last_updated": 1743005780.390212
+          },
+          {
+            "entity_name": "Kael Vorn",
+            "information": "Kael Vorn served in the War of the Ashen Blade.",
+            "confidence": 5,
+            "first_learned": 1743018546.1244473,
+            "last_updated": 1743018546.1244473
+          },
+          {
+            "entity_name": "The NPC in question",
+            "information": "The player is interested in knowing more about the NPC's past experiences and background.",
+            "confidence": 2,
+            "first_learned": 1743031417.7343123,
+            "last_updated": 1743031417.7343123
+          },
+          {
+            "entity_name": "Tavern Keeper",
+            "information": "The Tavern Keeper held a previous role before becoming a tavern keeper.",
+            "confidence": 4,
+            "first_learned": 1743031517.8589118,
+            "last_updated": 1743031517.8589118
+          },
+          {
+            "entity_name": "Lady Oletta",
+            "information": "Lady Oletta is a noblewoman from a prominent family with a rich history in the game world's political landscape.",
+            "confidence": 5,
+            "first_learned": 1743107746.9417808,
+            "last_updated": 1743107746.9417808
+          }
+        ],
+        "abilities": []
+      },
+      "location": {
+        "description": [
+          {
+            "entity_name": "Windvale",
+            "information": "Windvale is a village located to the west of the current location.",
+            "confidence": 5,
+            "first_learned": 1742662857.1815186,
+            "last_updated": 1742662857.1815186
+          }
+        ],
+        "inhabitants": [],
+        "dangers": [],
+        "resources": [],
+        "accessibility": [
+          {
+            "entity_name": "Windvale",
+            "information": "Traveling from the current location to Windvale by horseback would take about 7 days if one sticks to the road.",
+            "confidence": 5,
+            "first_learned": 1742662857.1815186,
+            "last_updated": 1742662857.1815186
+          }
+        ],
+        "history": [],
+        "atmosphere": []
+      },
+      "event": {
+        "participants": [],
+        "outcome": [],
+        "timeframe": [
+          {
+            "entity_name": "Celebration of Lady Oletta's 18th birthday",
+            "information": "The event took place during the celebration of her 18th birthday.",
+            "confidence": 5,
+            "first_learned": 1742663206.8661332,
+            "last_updated": 1742663206.8661332
+          }
+        ],
+        "location": [],
+        "cause": [
+          {
+            "entity_name": "Celebration of Lady Oletta's 18th birthday",
+            "information": "Lady Oletta cast the gloves into the crowd during the celebration to spite her lover.",
+            "confidence": 5,
+            "first_learned": 1742663206.8661332,
+            "last_updated": 1742663206.8661332
+          }
+        ],
+        "significance": []
+      },
+      "item": {
+        "description": [
+          {
+            "entity_name": "the Gloves of Lady Oletta",
+            "information": "Lady Oletta wore the gloves, which were once a gift to her by her lover.",
+            "confidence": 5,
+            "first_learned": 1742663206.8661332,
+            "last_updated": 1742663206.8661332
+          }
+        ],
+        "properties": [
+          {
+            "entity_name": "Silver Earrings",
+            "information": "The silver earrings are from Nassos.",
+            "confidence": 5,
+            "first_learned": 1742662996.0909722,
+            "last_updated": 1742662996.0909722
+          }
+        ],
+        "origin": [],
+        "value": [],
+        "ownership": [],
+        "effects": []
+      },
+      "faction": {
+        "members": [],
+        "goals": [],
+        "territory": [],
+        "relationships": [],
+        "resources": [],
+        "history": [],
+        "reputation": []
+      },
+      "lore": {
+        "historical": [
+          {
+            "entity_name": "The Duchy/Palace",
+            "information": "The Duchy has a famous tale about a fair princess who was beloved throughout the land.",
+            "confidence": 5,
+            "first_learned": 1742665099.340165,
+            "last_updated": 1742665099.340165
+          },
+          {
+            "entity_name": "northern wars",
+            "information": "Several factions and groups from the northern regions engaged in conflicts known as the northern wars.",
+            "confidence": 4,
+            "first_learned": 1743013667.8055065,
+            "last_updated": 1743013667.8055065
+          },
+          {
+            "entity_name": "",
+            "information": "",
+            "confidence": 1,
+            "first_learned": 1743027099.859526,
+            "last_updated": 1743027099.859526
+          }
+        ],
+        "cultural": [],
+        "magical": [],
+        "religious": [],
+        "geographical": [],
+        "political": [],
+        "technological": []
+      },
+      "quest": {
+        "objective": [],
+        "giver": [],
+        "rewards": [],
+        "location": [],
+        "requirements": [],
+        "obstacles": [],
+        "status": []
+      }
+    }
+  }
+}

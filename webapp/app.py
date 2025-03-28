@@ -100,38 +100,141 @@ def simulate_conversation():
         
         # Get initial message
         message = initial_prompt
-        data = {
-            "model": "deepseek-r1:7b",  # Match the Ollama model name
-            "initial_prompt": message,
-            "prompt": message,
-            "stream": False,
-            "max_tokens" : 50
-        }
-                
+        
         # Simulate conversation turns
         for i in range(turns):
-            print("appL boops")
-            data["prompt"] = message
-
+            print(f"Conversation turn {i}")
+            
+            # Set up current speakers
+            current_speaker = simulation_state['current_speaker']
+            current_listener = simulation_state['current_listener']
+            speaker_npc = simulation_state[current_speaker]
+            listener_npc = simulation_state[current_listener]
+            
+            # Get conversation context for current listener
+            conversation_context = Mem_manager.get_character_memory(
+                simulation_state['all_characters'], 
+                listener_npc
+            )
+            
+            # Create data for first response
+            data = {
+                "model": "deepseek-r1:8b",
+                "prompt": message,
+                "stream": False,
+                "max_tokens": 150
+            }
+            
+            # Use executive planner to analyze if knowledge is needed
+            knowledge_analysis = executive_planner.analyze_for_knowledge(
+                player_input=message,
+                character_id=listener_npc,
+                game_state=simulation_state,
+                conversation_context=conversation_context,
+            )
+            
+            # Assess and gather knowledge
+            knowledge_engine.assess_knowledge(
+                player_input=message,
+                character_id=listener_npc,
+                conversation_context=conversation_context,
+                data_dict=data,
+                ollama_service=ollama_manager
+            )
+            
+            # Add relevant knowledge if needed
+            if knowledge_analysis.get('knowledge_required', False) and 'memory_search_keywords' in knowledge_analysis:
+                data['relevant_knowledge'] = knowledge_engine.search_knowledge_base(
+                    knowledge_analysis['memory_search_keywords']
+                )
+            
+            # Generate first NPC response
             npc1_response = ollama_manager.get_response(data, simulation_state, Mem_manager)
-
-            # Switch speaker in simulation state
-            Mem_manager.add_interaction(simulation_state[simulation_state['current_speaker']], simulation_state['current_listener'], message, npc1_response, simulation_state['current_location'])
+            npc1_response_clean, chain_of_thought1 = ollama_manager.clean_response(npc1_response)
+            
+            # Store interaction in memory with proper chain of thought
+            Mem_manager.add_interaction(
+                listener_npc, 
+                speaker_npc, 
+                message, 
+                npc1_response_clean, 
+                chain_of_thought1, 
+                simulation_state['current_location']
+            )
+            
+            # Switch speaker and listener
             simulation_state['current_listener'] = simulation_state['current_speaker']
             simulation_state['current_speaker'] = 'npc_A' if simulation_state['current_speaker'] == 'npc_B' else 'npc_B'
-            npc1_response = re.sub(r'<think>.*?</think>', '', npc1_response, flags=re.DOTALL).strip()
-            yield f"data: {json.dumps({'speaker': simulation_state[simulation_state['current_speaker']], 'message': npc1_response, 'turn': i * 2})}\n\n"
-            data["prompt"] = npc1_response
-            # NPC 2's turn
-            npc2_response = ollama_manager.get_response(data, simulation_state, Mem_manager)
-            Mem_manager.add_interaction(simulation_state[simulation_state['current_speaker']], simulation_state[simulation_state['current_listener']], npc1_response, npc2_response, simulation_state['current_location'])
-            npc2_response = re.sub(r'<think>.*?</think>', '', npc2_response, flags=re.DOTALL).strip()
+            
+            # Send response to client
+            yield f"data: {json.dumps({'speaker': listener_npc, 'message': npc1_response_clean, 'turn': i * 2})}\n\n"
+            
+            # Update current speakers for second response
+            current_speaker = simulation_state['current_speaker']
+            current_listener = simulation_state['current_listener']
+            speaker_npc = simulation_state[current_speaker]
+            listener_npc = simulation_state[current_listener]
+            
+            # Get conversation context for second NPC
+            conversation_context2 = Mem_manager.get_character_memory(
+                simulation_state['all_characters'], 
+                listener_npc
+            )
+            
+            # Create data for second response
+            data2 = {
+                "model": "deepseek-r1:8b",
+                "prompt": npc1_response_clean,
+                "stream": False,
+                "max_tokens": 150
+            }
+            
+            # Analyze knowledge needs for second response
+            knowledge_analysis2 = executive_planner.analyze_for_knowledge(
+                player_input=npc1_response_clean,
+                character_id=listener_npc,
+                game_state=simulation_state,
+                conversation_context=conversation_context2,
+            )
+            
+            # Assess and gather knowledge for second response
+            knowledge_engine.assess_knowledge(
+                player_input=npc1_response_clean,
+                character_id=listener_npc,
+                conversation_context=conversation_context2,
+                data_dict=data2,
+                ollama_service=ollama_manager
+            )
+            
+            # Add relevant knowledge if needed
+            if knowledge_analysis2.get('knowledge_required', False) and 'memory_search_keywords' in knowledge_analysis2:
+                data2['relevant_knowledge'] = knowledge_engine.search_knowledge_base(
+                    knowledge_analysis2['memory_search_keywords']
+                )
+            
+            # Generate second NPC response
+            npc2_response = ollama_manager.get_response(data2, simulation_state, Mem_manager)
+            npc2_response_clean, chain_of_thought2 = ollama_manager.clean_response(npc2_response)
+            
+            # Store second interaction in memory
+            Mem_manager.add_interaction(
+                listener_npc,
+                speaker_npc,
+                npc1_response_clean,
+                npc2_response_clean,
+                chain_of_thought2,
+                simulation_state['current_location']
+            )
+            
+            # Switch speaker and listener again
             simulation_state['current_listener'] = simulation_state['current_speaker']
             simulation_state['current_speaker'] = 'npc_A' if simulation_state['current_speaker'] == 'npc_B' else 'npc_B'
-            yield f"data: {json.dumps({'speaker': simulation_state[simulation_state['current_speaker']], 'message': npc2_response, 'turn': i * 2 + 1})}\n\n"
+            
+            # Send second response to client
+            yield f"data: {json.dumps({'speaker': listener_npc, 'message': npc2_response_clean, 'turn': i * 2 + 1})}\n\n"
             
             # Update message for next turn
-            message = npc2_response
+            message = npc2_response_clean
             
         yield "event: end\ndata: Conversation complete\n\n"
     

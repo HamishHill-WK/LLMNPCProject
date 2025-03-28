@@ -24,41 +24,6 @@ class Prompt_Engine:
         
         return characters
 
-    def create_sample_character():
-        """Create a sample character if none exist"""
-        sample_character = {
-            "character_id": "tavernkeeper",
-            "name": "Greta",
-            "core_traits": [
-                "gruff but fair",
-                "efficient",
-                "protective of establishment",
-                "values honesty"
-            ],
-            "background": "Former soldier who fought in the Northern Wars. Runs the tavern for 15 years since retiring from the army. Lost family during the war and considers the tavern patrons her new family.",
-            "speech_pattern": "Short sentences. Northern dialect. Uses 'aye' and 'nay'. Rarely uses pleasantries or small talk. Often uses metaphors related to battle or survival.",
-            "knowledge": [
-                "Knows local town gossip and politics",
-                "Familiar with basic regional history and trade routes",
-                "Understands military tactics and weapons",
-                "No knowledge of magic or distant kingdoms"
-            ],
-            "goals": [
-                "Keep tavern profitable and respected",
-                "Protect regular customers from trouble",
-                "Maintain order in her establishment",
-                "Avoid entanglements with nobility or officials"
-            ],
-            "relationships": {
-                "village_elder": "Respectful but cautious",
-                "blacksmith": "Good friends and drinking buddies",
-                "mysterious_stranger": "Deeply suspicious and watchful"
-            }
-        }
-        
-        with open('characters/tavernkeeper.json', 'w') as f:
-            json.dump(sample_character, f, indent=2)
-
     def construct_npc_prompt(self, character_id, player_input, game_state, data):
         """Construct a prompt for the NPC based on character data and memory"""
         if character_id not in self.characters:
@@ -155,73 +120,113 @@ class Prompt_Engine:
         
         return prompt
 
-    def construct_inter_npc_prompt(self, speaker_id, speaker_input, simulation_state, mem_manager : memory_manager.MemoryManager):
-        """Construct a prompt for the NPC based on character data and memory"""
+    def construct_inter_npc_prompt(self, speaker_id, speaker_input, simulation_state, mem_manager: memory_manager.MemoryManager):
+        """Construct a prompt for NPC-to-NPC interaction with full knowledge integration"""
+        # Determine which NPC is listening and which is speaking
         listener_npc = simulation_state['npc_A'] if speaker_id == 'npc_B' else simulation_state['npc_B']
         speaker_npc = simulation_state['npc_A'] if speaker_id == 'npc_A' else simulation_state['npc_B']
+        speaker_npc_obj = self.characters.get(speaker_npc, {})
+        speaker_name = speaker_npc_obj.get('name', speaker_npc)
 
-        inital_prompt = simulation_state['initial_prompt']
+        initial_prompt = simulation_state['initial_prompt']
         if listener_npc not in self.characters:
             return "Error: Character not found."
         
         character = self.characters[listener_npc]
+        
         # Get character memory
         memory_context = "No previous interactions."
         if mem_manager is not None:
             memory_context = mem_manager.get_character_memory(simulation_state['all_characters'], listener_npc)
         
+        # Retrieve long-term memory summary
+        old_memory = mem_manager.get_memory_summary(listener_npc)
+        
+        # Build knowledge sections similar to player-NPC interactions
+        knowledge_sections = []
+        
+        # Add location knowledge
+        location_knowledge = self.knowledge_engine.get_entity_knowledge(listener_npc, "location", simulation_state['current_location'])
+        if location_knowledge and location_knowledge != f"You don't know much about {simulation_state['current_location']}.":
+            knowledge_sections.append(f"ABOUT {simulation_state['current_location'].upper()}:\n{location_knowledge}")
+        
+        # Most importantly, add knowledge about the speaking NPC
+        speaker_knowledge = self.knowledge_engine.get_entity_knowledge(listener_npc, "npc", speaker_name)
+        if speaker_knowledge and speaker_knowledge != f"You don't know much about {speaker_name}.":
+            knowledge_sections.append(f"ABOUT {speaker_name.upper()}:\n{speaker_knowledge}")
+        
+        # Check if any other NPCs are mentioned in the conversation
+        conversation_text = memory_context + " " + speaker_input
+        for npc_id in simulation_state['all_characters']:
+            if npc_id != listener_npc and npc_id != speaker_npc and npc_id in conversation_text:
+                # Another NPC is mentioned
+                npc_data = self.characters.get(npc_id, {})
+                npc_name = npc_data.get('name', npc_id)
+                npc_knowledge = self.knowledge_engine.get_entity_knowledge(listener_npc, "npc", npc_name)
+                if npc_knowledge and npc_knowledge != f"You don't know much about {npc_name}.":
+                    knowledge_sections.append(f"ABOUT {npc_name.upper()}:\n{npc_knowledge}")
+        
+        # Get character's general knowledge
         knowledge_section = ""
-        if 'knowledge' in self.characters:
+        if 'knowledge' in character:
             if isinstance(character['knowledge'], list):
                 knowledge_section = ', '.join(character['knowledge'])
             else:
                 knowledge_section = str(character['knowledge'])
         
-        # Construct the prompt
-        prompt = f"""
-    <system>
-    You are roleplaying as {character['name']}, a character in a text adventure game.
-    </system>
-
-    <character_profile>
-    CHARACTER TRAITS:
-    - {', '.join(character['core_traits'])}
-
-    BACKGROUND:
-    {character['background']}
-
-    SPEECH PATTERN:
-    {character['speech_pattern']}
-
-    KNOWLEDGE:
-    {knowledge_section}
-    </character_profile>
-
-    <previous_interactions>
-    {memory_context}
-    </previous_interactions>
-
-    <other_character_message>
-    {speaker_npc}: {speaker_input}
-    </other_character_message>
-
-    <system>
-    CURRENT SITUATION:
-    - Location: {simulation_state['current_location']}
-
-    You are currently interacting with {speaker_npc} in a text adventure game. The initial prompt was:
-    {inital_prompt}
-
-    If {speaker_npc} asks a question or makes a request, you should respond in character, building on the previous interactions and knowledge boundaries of {character['name']}.
-    Respond in character as {character['name']}, using your established speech pattern and personality. Don't write more than a paragraph.
-    You can use <think> tags to write your thought process, which will not be part of your actual response.
-    </system>
-
-    <character_response>
-    {character['name']}:
-    </character_response>
-    """
+        # Combine all knowledge sections
+        combined_knowledge = "\n\n".join(knowledge_sections) if knowledge_sections else ""
         
+        # Construct the enhanced prompt
+        prompt = f"""<system>You are roleplaying as {character['name']}, a character in a text adventure game.
+
+<character_profile>
+CHARACTER TRAITS:
+- {', '.join(character['core_traits'])}
+
+BACKGROUND:
+{character['background']}
+
+SPEECH PATTERN:
+{character['speech_pattern']}
+
+KNOWLEDGE:
+{knowledge_section}
+{combined_knowledge}
+</character_profile>
+
+<older_interaction_summary>
+{old_memory}
+</older_interaction_summary>
+
+<previous_interactions>
+{memory_context}
+</previous_interactions>
+
+<other_character_message>
+{speaker_name}: {speaker_input}
+</other_character_message>
+
+<system>
+CURRENT SITUATION:
+- Location: {simulation_state['current_location']}
+
+You are currently in a conversation with {speaker_name}. The initial context was:
+{initial_prompt}
+
+If {speaker_name} asks a question or makes a request, you should respond in character, building on your relationship and previous interactions.
+Respond naturally as {character['name']}, using your established speech pattern and personality. Don't write more than a paragraph.
+Your response should reflect your character's attitude toward {speaker_name} based on your relationship and history.
+Previous interactions have been included for context. Try not to repeat previous responses unless it is absolutely necessary.
+Older interactions have been summarized for brevity.
+You can use <think> tags to write your thought process, which will not be part of your actual response.
+</system>
+
+<character_response>
+{character['name']}:
+</character_response>
+"""
+    
         return prompt
     
     def add_system_prompt(self, data, game_state=None, mem_manager=None):
