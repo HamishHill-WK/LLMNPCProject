@@ -157,7 +157,7 @@ Respond with ONLY a JSON object and nothing else.
         analysis = self._initial_pattern_analysis(player_input)
         
         # Analyze knowledge requirements
-        if analysis.get("requires_memory", False):
+        if analysis.get("requires_memory", False) or analysis.get("knowledge_query", False):
             llm_analysis = self._get_llm_analysis(context)
             # Merge LLM analysis with pattern analysis, prioritizing LLM
             analysis = {**analysis, **llm_analysis}
