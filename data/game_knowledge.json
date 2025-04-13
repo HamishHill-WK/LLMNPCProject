@@ -19,8 +19,8 @@
           "entity_name": "Combat Experience",
           "information": "The player appears to have some combat training based on the way they carry themselves and the calluses on their hands.",
           "confidence": 3,
-          "first_learned": 1742662790.3304132,
-          "last_updated": 1742662790.3304132,
+          "first_learned": 1742662790.330413,
+          "last_updated": 1742662790.330413,
           "sources": [
             "Visual observation by NPCs"
           ]
@@ -50,7 +50,18 @@
       ],
       "goals": [],
       "relationships": [],
-      "preferences": [],
+      "preferences": [
+        {
+          "entity_name": "Player",
+          "information": "The player is approachable and friendly.",
+          "confidence": 3,
+          "first_learned": 1744466611.7785926,
+          "last_updated": 1744466611.7785926,
+          "sources": [
+            "The greeting 'hello' implies a friendly demeanor."
+          ]
+        }
+      ],
       "knowledge": []
     },
     "npc": {
@@ -1738,8 +1749,8 @@
             "entity_name": "Combat Experience",
             "information": "The player appears to have some combat training based on the way they carry themselves and the calluses on their hands.",
             "confidence": 3,
-            "first_learned": 1742662790.3304132,
-            "last_updated": 1742662790.3304132
+            "first_learned": 1742662790.330413,
+            "last_updated": 1742662790.330413
           }
         ],
         "possessions": [
@@ -1760,7 +1771,15 @@
         ],
         "goals": [],
         "relationships": [],
-        "preferences": [],
+        "preferences": [
+          {
+            "entity_name": "Player",
+            "information": "The player is approachable and friendly.",
+            "confidence": 3,
+            "first_learned": 1744466611.7785926,
+            "last_updated": 1744466611.7785926
+          }
+        ],
         "knowledge": []
       },
       "npc": {
@@ -1934,8 +1953,8 @@
             "entity_name": "Weapon Knowledge",
             "information": "The traveler shows a practiced familiarity with weapons, likely indicating military or mercenary experience.",
             "confidence": 3,
-            "first_learned": 1742662990.3304132,
-            "last_updated": 1742662990.3304132
+            "first_learned": 1742662990.330413,
+            "last_updated": 1742662990.330413
           }
         ],
         "possessions": [
@@ -2322,8 +2341,8 @@
             "entity_name": "Observant",
             "information": "The traveler notices details others might miss. Noted how they examined the tavern's artifacts upon entering.",
             "confidence": 4,
-            "first_learned": 1742662792.3304132,
-            "last_updated": 1742662792.3304132
+            "first_learned": 1742662792.330413,
+            "last_updated": 1742662792.330413
           }
         ],
         "possessions": [
@@ -2695,8 +2714,8 @@
             "entity_name": "Education",
             "information": "The traveler speaks with an educated manner unusual for common wayfarers. Potentially someone of learning or noble background.",
             "confidence": 3,
-            "first_learned": 1742662795.3304132,
-            "last_updated": 1742662795.3304132
+            "first_learned": 1742662795.330413,
+            "last_updated": 1742662795.330413
           }
         ],
         "possessions": [],

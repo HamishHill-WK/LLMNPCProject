@@ -26,7 +26,45 @@
                     {% endfor %}
                 </select>
             </p>
+            
+            <!-- AI Model Selection -->
+            <div id="ai-config-panel">
+                <h3>AI Configuration</h3>
+                <div>
+                    <strong>AI Provider:</strong>
+                    <select id="ai-provider-dropdown" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;">
+                        <option value="ollama" {% if game_state.ai_provider == 'ollama' %}selected{% endif %}>Ollama (Local)</option>
+                        <option value="openai" {% if game_state.ai_provider == 'openai' %}selected{% endif %}>OpenAI</option>
+                    </select>
+                </div>
+                
+                <div id="model-selection">
+                    <strong>Model:</strong>
+                    <select id="model-dropdown" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;">
+                        {% if game_state.ai_provider == 'ollama' %}
+                            {% for model in game_state.available_models.ollama %}
+                                <option value="{{ model }}" {% if model == game_state.selected_model %}selected{% endif %}>{{ model }}</option>
+                            {% endfor %}
+                        {% else %}
+                            {% for model in game_state.available_models.openai %}
+                                <option value="{{ model }}" {% if model == game_state.selected_model %}selected{% endif %}>{{ model }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                
+                <div id="openai-api-key" style="{% if game_state.ai_provider != 'openai' %}display: none;{% endif %}">
+                    <strong>OpenAI API Key:</strong>
+                    <input type="password" id="api-key-input" placeholder="Enter your OpenAI API key"
+                           style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px; width: 100%; margin-top: 5px;">
+                </div>
+                
+                <button id="update-ai-config" style="margin-top: 10px; background-color: #444; color: #ccc; padding: 5px 10px;">
+                    Update AI Configuration
+                </button>
+            </div>
         </div>
+        
         <div id = "npc-simulation">
             <div id="simulation-title-section">
                 <h2 id="simulation-title">Simulate NPC Conversation</h2>
@@ -68,6 +106,19 @@
         const simulationInput = document.getElementById('simulation-input');
         const npcDropdownA = document.getElementById('npc-dropdown-A');
         const npcDropdownB = document.getElementById('npc-dropdown-B');
+        
+        // AI config elements
+        const aiProviderDropdown = document.getElementById('ai-provider-dropdown');
+        const modelDropdown = document.getElementById('model-dropdown');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const openaiApiKeyDiv = document.getElementById('openai-api-key');
+        const updateAiConfigButton = document.getElementById('update-ai-config');
+        
+        // AI models data
+        const availableModels = {
+            ollama: {{ game_state.available_models.ollama|tojson }},
+            openai: {{ game_state.available_models.openai|tojson }}
+        };
 
         // Auto-scroll to bottom of output
         function scrollToBottom() {
@@ -81,6 +132,26 @@
             messageDiv.textContent = message;
             outputDiv.appendChild(messageDiv);
             scrollToBottom();
+        }
+        
+        // Update model dropdown options based on selected provider
+        function updateModelDropdown() {
+            const provider = aiProviderDropdown.value;
+            const models = availableModels[provider] || [];
+            
+            // Show/hide API key input for OpenAI
+            openaiApiKeyDiv.style.display = provider === 'openai' ? 'block' : 'none';
+            
+            // Clear existing options
+            modelDropdown.innerHTML = '';
+            
+            // Add new options
+            models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                modelDropdown.appendChild(option);
+            });
         }
 
         function changeNPC(npc) {
@@ -153,36 +224,6 @@
             });
         });
 
-        // inputFormNPC.addEventListener('submit', function(e) {
-        //    e.preventDefault();
-            
-        //    const input = simulationInput.value.trim();
-        //    if (!input) return;
-            
-            // Add simulation input to display
-        //    addMessage('> ' + input, 'player-input');
-       // /    
-            // Clear input field
-         //   simulationInput.value = '';
-            
-            // Send request to server
-        //    fetch('/api/simulate', {
-        //    method: 'POST',
-        //    headers: {
-        //        'Content-Type': 'application/json',
-        //    },
-        //    body: JSON.stringify({ simulation_input: input, npc_a: npcDropdownA.value, npc_b: npcDropdownB.value }),
-        //    })
-        //    .then(response => response.json())
-//.then(data => {
-            // Add NPC response
-          //  addMessage(data.response, 'npc-response');
-         //   })
-         //   .catch(error => {
-        //    console.error('Error:', error);
-//addMessage('Error communicating with the server.', 'system-message');
-         //   });
-        //}); 
         inputFormNPC.addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -233,16 +274,65 @@
                 eventSource.close();
             };
         });
-        // Initialize the UI
-        scrollToBottom();
-        playerInput.focus();
 
-                // Clean up when leaving the page
+        // AI provider change event
+        aiProviderDropdown.addEventListener('change', updateModelDropdown);
+        
+        // Update AI configuration
+        updateAiConfigButton.addEventListener('click', function() {
+            const provider = aiProviderDropdown.value;
+            const model = modelDropdown.value;
+            const apiKey = apiKeyInput.value.trim();
+            
+            // Show updating message
+            addMessage('Updating AI configuration...', 'system-message');
+            
+            // Send request to update configuration
+            fetch('/api/change_ai_config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    provider: provider,
+                    model: model,
+                    api_key: apiKey
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update available models in case they changed
+                    if (data.available_models) {
+                        availableModels.ollama = data.available_models.ollama || [];
+                        availableModels.openai = data.available_models.openai || [];
+                        updateModelDropdown();
+                    }
+                    
+                    addMessage(`AI configuration updated. Using ${data.ai_provider} with model ${data.selected_model}`, 'system-message');
+                } else {
+                    addMessage(`Error updating AI configuration: ${data.error || 'Unknown error'}`, 'system-message');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                addMessage(`Error communicating with the server: ${error}`, 'system-message');
+            });
+        });
+
+        // Clean up when leaving the page
         window.addEventListener('beforeunload', function() {
             if (window.eventSource) {
                 window.eventSource.close();
             }
         });
+        
+        // Initialize the AI model dropdown
+        updateModelDropdown();
+        
+        // Initialize the UI
+        scrollToBottom();
+        playerInput.focus();
     </script>
 </body>
 </html>
