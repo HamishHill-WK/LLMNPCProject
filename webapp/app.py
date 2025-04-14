@@ -301,20 +301,16 @@ def api_interact():
             conversation_context=conversation_context,
         )
                 
-        #data["knowledge_analysis"] = knowledge_analysis
-        
-        knowledge_engine.assess_knowledge(
-            player_input=player_input,
-            character_id=game_state['current_npc'],
-            conversation_context=conversation_context,
-            data_dict=data,
-            ollama_service=ollama_manager  # Use the enhanced ollama_manager
-        )
+        if knowledge_analysis.get("new_knowledge", False):
+            knowledge_engine.assess_knowledge(
+                player_input=player_input,
+                character_id=game_state['current_npc'],
+                conversation_context=conversation_context,
+                data_dict=data,
+                ollama_service=ollama_manager  
+            )
         
         response = ""
-        # If knowledge is required, retrieve it
-        if knowledge_analysis.get("knowledge_required", False) or knowledge_analysis.get("requires_memory", False):
-            print(f"Knowledge required for: {knowledge_analysis.get('knowledge_query', '')}")
         
         if len(knowledge_analysis['message_types']) == 1 and ('greeting' in knowledge_analysis['message_types'] or 'farewell' in knowledge_analysis['message_types']):
             response = ollama_manager.get_response(data, game_state, Mem_manager)
@@ -329,7 +325,7 @@ def api_interact():
             response, chain_of_thought = ollama_manager.clean_response(response)
             Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
             
-        if 'knowledge_query' in knowledge_analysis:            
+        if 'knowledge_query' in knowledge_analysis:
             return jsonify({
                 "response": response,
                 "game_state": game_state,
