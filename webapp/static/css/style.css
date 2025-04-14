@@ -14,14 +14,16 @@ body {
     overflow-y: scroll;
     margin-bottom: 10px;
     white-space: pre-wrap;
+    height: 300px;
 }
 .container {
     display: flex;
     flex-direction: column;
     height: 100vh; /* or another fixed height */
-  }
+}
 #input-form {
     display: flex;
+    margin-bottom: 15px;
 }
 #input-form-npc {
     display: flex;
@@ -31,7 +33,8 @@ body {
     background-color: #333;
     border: 1px solid #555;
     padding: 8px;
-    color: #ccc;}
+    color: #ccc;
+}
 
 #player-input {
     flex-grow: 1;
@@ -45,11 +48,13 @@ body {
     border: 1px solid #555;
     padding: 15px;
     height: calc(100vh - 70px);
+    overflow-y: auto;
 }
 #npc-simulation{
     background-color: #333;
     border: 1px solid #555;
     padding: 15px;
+    margin-top: 15px;
 }
 #simulation-title{
     color: #d4e0d4;
@@ -71,6 +76,11 @@ button {
     border: none;
     padding: 8px 15px;
     margin-left: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+button:hover {
+    background-color: #666;
 }
 .npc-response {
     color: #88cc88;
@@ -81,4 +91,75 @@ button {
 .system-message {
     color: #cccc88;
     font-style: italic;
+}
+
+/* AI Configuration Panel Styles */
+#ai-config-panel {
+    background-color: #2a2a2a;
+    border: 1px solid #555;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+#ai-config-panel h3 {
+    color: #d4e0d4;
+    margin-top: 0;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 5px;
+}
+
+#ai-config-panel div {
+    margin-bottom: 10px;
+}
+
+#ai-config-panel select,
+#ai-config-panel input {
+    background-color: #333;
+    color: #ccc;
+    border: 1px solid #555;
+    padding: 8px;
+    width: 100%;
+    max-width: 400px;
+    margin-top: 5px;
+    border-radius: 3px;
+}
+
+#update-ai-config {
+    background-color: #446644;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background-color 0.2s;
+}
+
+#update-ai-config:hover {
+    background-color: #558855;
+}
+
+#openai-api-key {
+    margin-top: 10px;
+}
+
+#model-selection {
+    margin-top: 10px;
+}
+
+/* Improve responsiveness */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+    
+    #game-container {
+        padding: 10px;
+    }
+    
+    button {
+        padding: 6px 10px;
+    }
 }

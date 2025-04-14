@@ -12,18 +12,35 @@ import executive as kep  # Import the new module
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
+# Initialize engines and managers
 knowledge_engine = ke.KnowledgeEngine()
 executive_planner = kep.KnowledgeExecutivePlanner(knowledge_engine=knowledge_engine)
 Mem_manager = memory_manager.MemoryManager(max_short_term=3, knowledge_engine=knowledge_engine)
 prompt_engine = pe.Prompt_Engine(memory_manager=Mem_manager, knowledge_engine=knowledge_engine)
+
+# Initialize AI manager
 ollama_manager = om.OllamaManager(prompt_engine=prompt_engine)
+
+# AI service configuration
+ai_config = {
+    'provider': 'ollama',  # Default to ollama
+    'model': 'deepseek-r1:8b',  # Default ollama model
+    'openai_model': 'gpt-3.5-turbo',  # Default OpenAI model
+    'available_models': {
+        'ollama': ollama_manager.available_models.get('ollama', []),
+        'openai': ollama_manager.available_models.get('openai', [])
+    }
+}
+
+# Use the enhanced ollama_manager for all AI requests
 
 # Simple game state
 game_state = {
     'current_location': 'tavern',
     'current_npc': 'tavernkeeper',
     'all_characters': [],
-    'inventory': []
+    'inventory': [],
+    'ai_config': ai_config
 }
 
 simulation_state = {
@@ -34,7 +51,8 @@ simulation_state = {
     'npc_B': 'blacksmith',
     'initial_prompt': 'You are in a tavern. The tavernkeeper greets you with a smile.',
     'all_characters': [],
-    'inventory': []
+    'inventory': [],
+    'ai_config': ai_config
 }
 
 @app.route('/', methods=['GET', 'POST'])
@@ -44,6 +62,11 @@ def game():
     if request.method == 'POST':
         player_input = request.form.get('player_input', '')
         response = f"You said: {player_input}"
+        
+    # Add AI provider and models to game state
+    game_state['ai_provider'] = ollama_manager.ai_provider
+    game_state['available_models'] = ollama_manager.available_models
+    game_state['selected_model'] = ollama_manager.selected_model
         
     return render_template('game.html', response=response, game_state=game_state, simulation_state=simulation_state)
 
@@ -117,9 +140,15 @@ def simulate_conversation():
                 listener_npc
             )
             
+            # Use the enhanced ollama_manager which now handles both providers
+            
+            # Set model based on current provider
+            model_name = (ollama_manager.selected_model if ollama_manager.ai_provider == 'ollama' 
+                         else "gpt-3.5-turbo" if ollama_manager.ai_provider == 'openai' else "deepseek-r1:8b")
+            
             # Create data for first response
             data = {
-                "model": "deepseek-r1:8b",
+                "model": model_name,
                 "prompt": message,
                 "stream": False,
                 "max_tokens": 150
@@ -183,7 +212,7 @@ def simulate_conversation():
             
             # Create data for second response
             data2 = {
-                "model": "deepseek-r1:8b",
+                "model": model_name,  # Use the same model as the first response
                 "prompt": npc1_response_clean,
                 "stream": False,
                 "max_tokens": 150
@@ -203,7 +232,7 @@ def simulate_conversation():
                 character_id=listener_npc,
                 conversation_context=conversation_context2,
                 data_dict=data2,
-                ollama_service=ollama_manager
+                ollama_service=ollama_manager  # Use the enhanced ollama_manager
             )
             
             # Add relevant knowledge if needed
@@ -252,7 +281,7 @@ def api_interact():
       
         prompt = player_input.strip()
         data = {
-            "model": "deepseek-r1:8b",  # Match the Ollama model name
+            "model": ollama_manager.selected_model,
             "prompt": prompt,
             "stream": False,
             "max_tokens": 150
@@ -279,7 +308,7 @@ def api_interact():
             character_id=game_state['current_npc'],
             conversation_context=conversation_context,
             data_dict=data,
-            ollama_service=ollama_manager
+            ollama_service=ollama_manager  # Use the enhanced ollama_manager
         )
         
         response = ""
@@ -313,6 +342,40 @@ def api_interact():
             })
     except Exception as e:
         print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/change_ai_config', methods=['POST'])
+def change_ai_config():
+    """API endpoint to change the AI provider, model, and API key"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "Missing data"}), 400
+            
+        success = False
+        
+        # Extract parameters
+        provider = data.get('provider')
+        model = data.get('model')
+        api_key = data.get('api_key')
+        
+        # Update AI provider and model in ollama_manager
+        success = ollama_manager.set_ai_provider(provider, model, api_key)
+        
+        # Update executive_planner and Mem_manager to use the updated ollama_manager
+        # This ensures they use the correct AI provider
+        executive_planner.set_ollama(ollama_manager)
+        Mem_manager.set_ollama(ollama_manager)
+        
+        # Return the updated configuration
+        return jsonify({
+            "success": success,
+            "ai_provider": ollama_manager.ai_provider,
+            "selected_model": ollama_manager.selected_model,
+            "available_models": ollama_manager.available_models
+        })
+    except Exception as e:
+        print(f"Error changing AI config: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
