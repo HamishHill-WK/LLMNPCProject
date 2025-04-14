@@ -300,15 +300,14 @@ def api_interact():
             game_state=game_state,
             conversation_context=conversation_context,
         )
-                
-        if knowledge_analysis.get("new_knowledge", False):
-            knowledge_engine.assess_knowledge(
-                player_input=player_input,
-                character_id=game_state['current_npc'],
-                conversation_context=conversation_context,
-                data_dict=data,
-                ollama_service=ollama_manager  
-            )
+
+        knowledge_engine.assess_knowledge(
+            player_input=player_input,
+            character_id=game_state['current_npc'],
+            conversation_context=conversation_context,
+            data_dict=data,
+            ollama_service=ollama_manager  
+        )
         
         response = ""
         
