@@ -26,9 +26,7 @@ class KnowledgeExecutivePlanner:
     def __init__(self, ollama_service=None, knowledge_engine=None):
         self.ollama_service = ollama_service
         self.knowledge_engine = knowledge_engine
-        
-        #print(f"Knowledge Executive Planner initialized type {type(self.ollama_service)}" )
-        
+                
         # Define common patterns for message classification
         self.patterns = {
             'greeting': r'\b(hello|hi|hey|greetings|good morning|good day|good evening|howdy)\b',
@@ -52,7 +50,6 @@ class KnowledgeExecutivePlanner:
     
     def _initial_pattern_analysis(self, message: str) -> Dict[str, Any]:
         """Perform initial pattern-based analysis of the message"""
-        print("initial pattern analysis")
         requires_memory = False
         memory_search_strategy = "none"
         memory_keywords = []
@@ -70,7 +67,6 @@ class KnowledgeExecutivePlanner:
                     message_types.append(type_name)
 
             if "memory_recall" in message_types or "knowledge_query" in message_types or "question" in message_types:
-                print("memory recall")
                 requires_memory = True
                 memory_search_strategy = "semantic"
                 # Extract potential keywords for memory search
@@ -85,11 +81,9 @@ class KnowledgeExecutivePlanner:
         return analysis
     
     def get_keywords(self, message: str) -> List[str]:
-        print("get keywords")
         return [word for word in message.split() if len(word) > 2 and word not in ["remember", "recall", "said", "told", "mentioned", "the", "a", "yes" ] and word not in self.patterns['greeting'] and word not in self.patterns['farewell'] and word not in self.patterns['question']]
 
     def _get_llm_analysis(self, context: DialogueContext) -> Dict[str, Any]:
-        print("get llm analysis")
         """Get enhanced analysis using the LLM"""
 
         prompt = f"""<system>

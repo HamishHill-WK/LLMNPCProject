@@ -136,7 +136,6 @@ class KnowledgeEngine:
     
     def _save_knowledge_base(self):
         """Save the knowledge base to disk"""
-        debug_config.debug_print(f"Saving knowledge base to {self.knowledge_file}")
         with open(self.knowledge_file, 'w') as f:
             json.dump(self.knowledge_base, f, indent=2)
     
@@ -188,7 +187,6 @@ Any other format will be ignored by the system.
         """Parse the extraction result from the LLM"""
         # Check for no information response
         if "NO_NEW_INFORMATION" in extraction_text:
-            debug_config.debug_print(f"Knowledge Engine - No new information found")
             return []
         
         try:

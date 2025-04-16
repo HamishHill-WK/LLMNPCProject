@@ -42,9 +42,7 @@ class Prompt_Engine:
         location_knowledge = self.knowledge_engine.get_entity_knowledge(character_id, "location", game_state['current_location'])
         if location_knowledge and location_knowledge != f"You don't know much about {game_state['current_location']}.":
             knowledge_sections.append(f"ABOUT {game_state['current_location'].upper()}:\n{location_knowledge}")
-            
-        print(location_knowledge)
-        
+                    
         if 'relevant_knowledge' in data:
             knowledge_sections.append(f"RELEVANT KNOWLEDGE:\n{data['relevant_knowledge']}")
         

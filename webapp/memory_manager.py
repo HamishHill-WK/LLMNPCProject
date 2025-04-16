@@ -38,7 +38,6 @@ class MemoryManager:
             json.dump(self.memories, f, indent=2)
     
     def add_interaction(self, character_id, other_id, other_message, character_response, chain_of_thought, location):
-        print("Adding interaction")
         """Add a new interaction to a character's memory"""
         # Initialize character memory if not exists
         if character_id not in self.memories:
@@ -53,8 +52,6 @@ class MemoryManager:
         if character_id in self.characters and 'name' in self.characters[character_id]:
             dialogue = dialogue.replace(f"{self.characters[character_id]['name']}: ", "").strip()
     
-        #print(f"Dialogue: {dialogue}")
-
         # Split the response into dialogue and actions if "Character Actions:" is present
         character_actions = ""
         if "Character Actions:" in dialogue:
