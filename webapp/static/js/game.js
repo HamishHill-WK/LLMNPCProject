@@ -17,6 +17,9 @@ const updateAiConfigButton = document.getElementById('update-ai-config');
 // Inference time tracking variables
 let requestStartTime = 0;
 
+// Flag to track if a request is in progress
+let isRequestInProgress = false;
+
 // Auto-scroll to bottom of output
 function scrollToBottom() {
     outputDiv.scrollTop = outputDiv.scrollHeight;
@@ -95,6 +98,12 @@ function initializeEventListeners() {
     inputForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
+        // Prevent multiple submissions while a request is in progress
+        if (isRequestInProgress) {
+            console.log('Request already in progress, ignoring submission');
+            return;
+        }
+        
         const input = playerInput.value.trim();
         if (!input) return;
         
@@ -107,13 +116,25 @@ function initializeEventListeners() {
         // Record start time
         requestStartTime = performance.now();
         
+        // Set flag to indicate request is in progress
+        isRequestInProgress = true;
+        
+        // Disable the input and submit button during request
+        playerInput.disabled = true;
+        const submitButton = inputForm.querySelector('button[type="submit"]');
+        if (submitButton) submitButton.disabled = true;
+        
         // Send request to server
         fetch('/api/interact', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ player_input: input }),
+            body: JSON.stringify({ 
+                player_input: input,
+                // Add a unique request ID to prevent duplicates
+                request_id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
+            }),
         })
         .then(response => response.json())
         .then(data => {
@@ -129,6 +150,13 @@ function initializeEventListeners() {
         .catch(error => {
             console.error('Error:', error);
             addMessage('Error communicating with the server.', 'system-message');
+        })
+        .finally(() => {
+            // Reset flag and re-enable inputs regardless of success/failure
+            isRequestInProgress = false;
+            playerInput.disabled = false;
+            if (submitButton) submitButton.disabled = false;
+            playerInput.focus();
         });
     });
 

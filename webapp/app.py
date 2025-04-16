@@ -8,6 +8,14 @@ import ollama_manager as om
 import re
 import knowledge_engine as ke
 import executive as kep  # Import the new module
+import logging
+import time
+
+# Set up logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+logger.addHandler(handler)
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -54,6 +62,25 @@ simulation_state = {
     'inventory': [],
     'ai_config': ai_config
 }
+
+# Request deduplication cache
+request_cache = {}
+MAX_CACHE_SIZE = 100  # Maximum number of request IDs to cache
+CACHE_EXPIRY_TIME = 60  # Seconds before a cached request can be removed
+
+# Cleanup old entries in the request cache
+def cleanup_request_cache():
+    current_time = time.time()
+    expired_keys = [k for k, v in request_cache.items() if current_time - v > CACHE_EXPIRY_TIME]
+    
+    for key in expired_keys:
+        del request_cache[key]
+    
+    # If cache is still too large, remove oldest entries
+    if len(request_cache) > MAX_CACHE_SIZE:
+        sorted_keys = sorted(request_cache.keys(), key=lambda k: request_cache[k])
+        for key in sorted_keys[:len(request_cache) - MAX_CACHE_SIZE]:
+            del request_cache[key]
 
 @app.route('/', methods=['GET', 'POST'])
 def game():
@@ -167,12 +194,13 @@ def simulate_conversation():
                 ollama_service=ollama_manager
             )
             
-            # Add relevant knowledge if needed
-            if knowledge_analysis.get('knowledge_required', False) and 'memory_search_keywords' in knowledge_analysis:
-                data['relevant_knowledge'] = knowledge_engine.search_knowledge_base(
-                    knowledge_analysis['memory_search_keywords']
-                )
-            
+            # Add relevant knowledge if 
+            if "knowledge_required" in knowledge_analysis:
+                if knowledge_analysis.get('knowledge_required', False) and 'memory_search_keywords' in knowledge_analysis:
+                    data['relevant_knowledge'] = knowledge_engine.search_knowledge_base(
+                        knowledge_analysis['memory_search_keywords']
+                    )
+                
             # Generate first NPC response
             npc1_response = ollama_manager.get_response(data, simulation_state, Mem_manager)
             npc1_response_clean, chain_of_thought1 = ollama_manager.clean_response(npc1_response)
@@ -232,11 +260,12 @@ def simulate_conversation():
             )
             
             # Add relevant knowledge if needed
-            if knowledge_analysis2.get('knowledge_required', False) and 'memory_search_keywords' in knowledge_analysis2:
-                data2['relevant_knowledge'] = knowledge_engine.search_knowledge_base(
-                    knowledge_analysis2['memory_search_keywords']
-                )
-            
+            if "knowledge_required" in knowledge_analysis2:
+                if knowledge_analysis2.get('knowledge_required', False) and 'memory_search_keywords' in knowledge_analysis2:
+                    data2['relevant_knowledge'] = knowledge_engine.search_knowledge_base(
+                        knowledge_analysis2['memory_search_keywords']
+                    )
+                
             # Generate second NPC response
             npc2_response = ollama_manager.get_response(data2, simulation_state, Mem_manager)
             npc2_response_clean, chain_of_thought2 = ollama_manager.clean_response(npc2_response)
@@ -283,6 +312,21 @@ def api_interact():
             "max_tokens": 150
         }
         
+        # Check for request_id for deduplication
+        request_id = data.get('request_id')
+        if request_id:
+            # Check if this request has been seen recently
+            if request_id in request_cache:
+                logger.info(f"Duplicate request detected with ID: {request_id}")
+                return jsonify({"response": "Your message is being processed, please wait...", 
+                               "note": "Duplicate request detected"})
+            
+            # Add to cache with timestamp
+            request_cache[request_id] = time.time()
+            
+            # Clean up old cache entries periodically
+            cleanup_request_cache()
+        
         # Get conversation context for the character
         conversation_context = Mem_manager.get_character_memory(
             game_state['all_characters'], 
@@ -307,29 +351,44 @@ def api_interact():
         
         response = ""
         
-        if len(knowledge_analysis['message_types']) == 1 and ('greeting' in knowledge_analysis['message_types'] or 'farewell' in knowledge_analysis['message_types']):
+        # if len(knowledge_analysis['message_types']) == 1 and ('greeting' in knowledge_analysis['message_types'] or 'farewell' in knowledge_analysis['message_types']):
+        #     response = ollama_manager.get_response(data, game_state, Mem_manager)
+        #     response, chain_of_thought = ollama_manager.clean_response(response)
+        #     Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
+
+        print(knowledge_analysis)
+
+        if 'knowledge_query' in knowledge_analysis:
+            print("Knowledge query detected")
+            if knowledge_analysis['knowledge_required'] and 'memory_search_keywords' in knowledge_analysis:
+                data['relevant_knowledge'] = knowledge_engine.search_knowledge_base(knowledge_analysis['memory_search_keywords'])
+            
+            response = ollama_manager.get_response(data, game_state, Mem_manager)
+            response, chain_of_thought = ollama_manager.clean_response(response)
+            Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
+                
+        elif 'requires_memory' in knowledge_analysis:
+            print("Memory required")
+            if knowledge_analysis['requires_memory'] and 'memory_search_keywords' in knowledge_analysis:
+                data['relevant_knowledge'] = knowledge_engine.search_knowledge_base(knowledge_analysis['memory_search_keywords'])
+            
+            response = ollama_manager.get_response(data, game_state, Mem_manager)
+            print("Response:", response) 
+            response, chain_of_thought = ollama_manager.clean_response(response)
+            Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
+                
+        else:
+            print("No knowledge query or memory required, using default response")
             response = ollama_manager.get_response(data, game_state, Mem_manager)
             response, chain_of_thought = ollama_manager.clean_response(response)
             Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
         
-        elif knowledge_analysis['knowledge_required'] or knowledge_analysis['requires_memory']:
-            if 'memory_search_keywords' in knowledge_analysis:
-                data['relevant_knowledge'] = knowledge_engine.search_knowledge_base(knowledge_analysis['memory_search_keywords'])
-            response = ollama_manager.get_response(data, game_state, Mem_manager)
-            response, chain_of_thought = ollama_manager.clean_response(response)
-            Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
-            
-        if 'knowledge_query' in knowledge_analysis:
-            return jsonify({
-                "response": response,
-                "game_state": game_state,
-                "knowledge_used": knowledge_analysis.get("knowledge_required", False)
-            })
-        else:
-            return jsonify({
-                "response": response,
-                "game_state": game_state
-            })
+        # Always return a response, with any additional data as needed
+        return jsonify({
+            "response": response,
+            "game_state": game_state,
+            "knowledge_used": 'knowledge_query' in knowledge_analysis and knowledge_analysis.get('knowledge_required', False)
+        })
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500

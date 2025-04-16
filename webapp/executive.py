@@ -5,6 +5,8 @@ import json
 import re
 import logging
 from typing import Dict, Any, List 
+import os
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -84,6 +86,7 @@ class KnowledgeExecutivePlanner:
         return [word for word in message.split() if len(word) > 2 and word not in ["remember", "recall", "said", "told", "mentioned", "the", "a", "yes" ] and word not in self.patterns['greeting'] and word not in self.patterns['farewell'] and word not in self.patterns['question']]
 
     def _get_llm_analysis(self, context: DialogueContext) -> Dict[str, Any]:
+        print(f"Kep - LLM Analysis: {context.player_message}")
         """Get enhanced analysis using the LLM"""
 
         prompt = f"""<system>
@@ -123,6 +126,26 @@ Respond with ONLY a JSON object and nothing else.
             # Get response from LLM
             llm_response = self.ollama_service.get_response(data, minimal_game_state, None)
 
+            print(f"Kep - LLM Response: {llm_response}")
+            # Save LLM response for debugging
+            try:
+                
+                # Create directory if it doesn't exist
+                debug_dir = "data/debug/analysis"
+                os.makedirs(debug_dir, exist_ok=True)
+                
+                # Create filename with timestamp and character ID
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"{debug_dir}/{timestamp}_{context.character_id}_analysis.json"
+                
+                # Write LLM response to file
+                with open(filename, "w") as f:
+                    f.write(llm_response)
+                
+                logger.debug(f"Saved LLM analysis to {filename}")
+            except Exception as e:
+                logger.error(f"Failed to save LLM response for debugging: {e}")
+
             # Try to extract just the JSON part if there's any additional text
             json_match = re.search(r'({.*})', llm_response, re.DOTALL)
             if json_match:
@@ -155,5 +178,7 @@ Respond with ONLY a JSON object and nothing else.
             llm_analysis = self._get_llm_analysis(context)
             # Merge LLM analysis with pattern analysis, prioritizing LLM
             analysis = {**analysis, **llm_analysis}
+            print(f"KEP - LLM Analysis: {llm_analysis}")
+            
         
         return analysis

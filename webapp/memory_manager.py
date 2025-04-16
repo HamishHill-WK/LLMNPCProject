@@ -161,6 +161,9 @@ Resolve any contradictions by favoring newer information.
             "max_tokens": 150
         }, None, None)
         
+        
+        print(f"Memory summary for {character_name}: {response}")
+
         response = self.ollama.clean_response(response)
         
         return response
