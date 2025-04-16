@@ -29,6 +29,10 @@
                 <button id="clear-memories" style="background-color: #993333; color: #fff; border: 1px solid #555; padding: 5px; margin-left: 10px;">
                     Clear Memories
                 </button>
+                <!-- Add Clear Knowledge button -->
+                <button id="clear-knowledge" style="background-color: #993333; color: #fff; border: 1px solid #555; padding: 5px; margin-left: 10px;">
+                    Clear Knowledge
+                </button>
             </p>
             
             <!-- AI Model Selection -->
@@ -352,6 +356,36 @@
                         addMessage('All character memories have been cleared successfully.', 'system-message');
                     } else {
                         addMessage(`Error clearing memories: ${data.error || 'Unknown error'}`, 'system-message');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    addMessage('Error communicating with the server.', 'system-message');
+                });
+            }
+        });
+        
+        // Clear Knowledge button handler
+        document.getElementById('clear-knowledge').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            if (confirm('Are you sure you want to reset game knowledge to defaults? This action cannot be undone.')) {
+                // Show clearing message
+                addMessage('Resetting game knowledge to defaults...', 'system-message');
+                
+                // Send request to clear knowledge
+                fetch('/api/clear_knowledge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        addMessage('Game knowledge has been reset to defaults successfully.', 'system-message');
+                    } else {
+                        addMessage(`Error resetting knowledge: ${data.error || 'Unknown error'}`, 'system-message');
                     }
                 })
                 .catch(error => {

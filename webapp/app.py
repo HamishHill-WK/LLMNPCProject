@@ -403,6 +403,43 @@ def clear_memories():
             "error": str(e)
         }), 500
 
+@app.route('/api/clear_knowledge', methods=['POST'])
+def clear_knowledge():
+    """API endpoint to reset game knowledge to defaults"""
+    try:
+        # Define paths for knowledge files
+        default_knowledge_path = 'data/game_knowledge_default.json'
+        current_knowledge_path = 'data/game_knowledge.json'
+        
+        # Check if default knowledge file exists
+        if os.path.exists(default_knowledge_path):
+            # Read the default knowledge
+            with open(default_knowledge_path, 'r') as f:
+                default_knowledge = json.load(f)
+            
+            # Replace the current knowledge with defaults
+            knowledge_engine.knowledge_base = default_knowledge
+            
+            # Save the reset knowledge to the current knowledge file
+            with open(current_knowledge_path, 'w') as f:
+                json.dump(default_knowledge, f, indent=2)
+            
+            return jsonify({
+                "success": True, 
+                "message": "Game knowledge has been reset to defaults"
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": "Default knowledge file not found"
+            }), 404
+    except Exception as e:
+        print(f"Error resetting knowledge: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 if __name__ == '__main__':
     character_data = prompt_engine.load_characters()
     Mem_manager.save_characters(character_data)
