@@ -300,21 +300,16 @@ def api_interact():
             game_state=game_state,
             conversation_context=conversation_context,
         )
-                
-        #data["knowledge_analysis"] = knowledge_analysis
-        
+
         knowledge_engine.assess_knowledge(
             player_input=player_input,
             character_id=game_state['current_npc'],
             conversation_context=conversation_context,
             data_dict=data,
-            ollama_service=ollama_manager  # Use the enhanced ollama_manager
+            ollama_service=ollama_manager  
         )
         
         response = ""
-        # If knowledge is required, retrieve it
-        if knowledge_analysis.get("knowledge_required", False) or knowledge_analysis.get("requires_memory", False):
-            print(f"Knowledge required for: {knowledge_analysis.get('knowledge_query', '')}")
         
         if len(knowledge_analysis['message_types']) == 1 and ('greeting' in knowledge_analysis['message_types'] or 'farewell' in knowledge_analysis['message_types']):
             response = ollama_manager.get_response(data, game_state, Mem_manager)
@@ -329,7 +324,7 @@ def api_interact():
             response, chain_of_thought = ollama_manager.clean_response(response)
             Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
             
-        if 'knowledge_query' in knowledge_analysis:            
+        if 'knowledge_query' in knowledge_analysis:
             return jsonify({
                 "response": response,
                 "game_state": game_state,
@@ -377,6 +372,73 @@ def change_ai_config():
     except Exception as e:
         print(f"Error changing AI config: {e}")
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/clear_memories', methods=['POST'])
+def clear_memories():
+    """API endpoint to clear all character memories"""
+    try:
+        # Load the default memories from memories_default.json
+        default_memories_path = 'data/memories_default.json'
+        if os.path.exists(default_memories_path):
+            with open(default_memories_path, 'r') as f:
+                default_memories = json.load(f)
+            
+            # Replace the current memories with defaults
+            Mem_manager.memories = default_memories
+        else:
+            # If default file doesn't exist, just clear the memories
+            Mem_manager.memories = {}
+        
+        # Save the reset memories state to file
+        Mem_manager.save_memories()
+        
+        return jsonify({
+            "success": True,
+            "message": "All character memories have been reset to defaults"
+        })
+    except Exception as e:
+        print(f"Error resetting memories: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/api/clear_knowledge', methods=['POST'])
+def clear_knowledge():
+    """API endpoint to reset game knowledge to defaults"""
+    try:
+        # Define paths for knowledge files
+        default_knowledge_path = 'data/game_knowledge_default.json'
+        current_knowledge_path = 'data/game_knowledge.json'
+        
+        # Check if default knowledge file exists
+        if os.path.exists(default_knowledge_path):
+            # Read the default knowledge
+            with open(default_knowledge_path, 'r') as f:
+                default_knowledge = json.load(f)
+            
+            # Replace the current knowledge with defaults
+            knowledge_engine.knowledge_base = default_knowledge
+            
+            # Save the reset knowledge to the current knowledge file
+            with open(current_knowledge_path, 'w') as f:
+                json.dump(default_knowledge, f, indent=2)
+            
+            return jsonify({
+                "success": True, 
+                "message": "Game knowledge has been reset to defaults"
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": "Default knowledge file not found"
+            }), 404
+    except Exception as e:
+        print(f"Error resetting knowledge: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 if __name__ == '__main__':
     character_data = prompt_engine.load_characters()

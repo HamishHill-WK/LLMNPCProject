@@ -25,6 +25,14 @@
                         <option value="{{ npc }}" {% if npc == game_state.current_npc %}selected{% endif %}>{{ npc }}</option>
                     {% endfor %}
                 </select>
+                <!-- Add Clear Memories button -->
+                <button id="clear-memories" style="background-color: #993333; color: #fff; border: 1px solid #555; padding: 5px; margin-left: 10px;">
+                    Clear Memories
+                </button>
+                <!-- Add Clear Knowledge button -->
+                <button id="clear-knowledge" style="background-color: #993333; color: #fff; border: 1px solid #555; padding: 5px; margin-left: 10px;">
+                    Clear Knowledge
+                </button>
             </p>
             
             <!-- AI Model Selection -->
@@ -324,6 +332,66 @@
         window.addEventListener('beforeunload', function() {
             if (window.eventSource) {
                 window.eventSource.close();
+            }
+        });
+        
+        // Clear Memories button handler
+        document.getElementById('clear-memories').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            if (confirm('Are you sure you want to clear all character memories? This action cannot be undone.')) {
+                // Show clearing message
+                addMessage('Clearing character memories...', 'system-message');
+                
+                // Send request to clear memories
+                fetch('/api/clear_memories', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        addMessage('All character memories have been cleared successfully.', 'system-message');
+                    } else {
+                        addMessage(`Error clearing memories: ${data.error || 'Unknown error'}`, 'system-message');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    addMessage('Error communicating with the server.', 'system-message');
+                });
+            }
+        });
+        
+        // Clear Knowledge button handler
+        document.getElementById('clear-knowledge').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            if (confirm('Are you sure you want to reset game knowledge to defaults? This action cannot be undone.')) {
+                // Show clearing message
+                addMessage('Resetting game knowledge to defaults...', 'system-message');
+                
+                // Send request to clear knowledge
+                fetch('/api/clear_knowledge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        addMessage('Game knowledge has been reset to defaults successfully.', 'system-message');
+                    } else {
+                        addMessage(`Error resetting knowledge: ${data.error || 'Unknown error'}`, 'system-message');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    addMessage('Error communicating with the server.', 'system-message');
+                });
             }
         });
         
