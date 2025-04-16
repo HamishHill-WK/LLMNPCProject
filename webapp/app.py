@@ -373,6 +373,36 @@ def change_ai_config():
         print(f"Error changing AI config: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/clear_memories', methods=['POST'])
+def clear_memories():
+    """API endpoint to clear all character memories"""
+    try:
+        # Load the default memories from memories_default.json
+        default_memories_path = 'data/memories_default.json'
+        if os.path.exists(default_memories_path):
+            with open(default_memories_path, 'r') as f:
+                default_memories = json.load(f)
+            
+            # Replace the current memories with defaults
+            Mem_manager.memories = default_memories
+        else:
+            # If default file doesn't exist, just clear the memories
+            Mem_manager.memories = {}
+        
+        # Save the reset memories state to file
+        Mem_manager.save_memories()
+        
+        return jsonify({
+            "success": True,
+            "message": "All character memories have been reset to defaults"
+        })
+    except Exception as e:
+        print(f"Error resetting memories: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 if __name__ == '__main__':
     character_data = prompt_engine.load_characters()
     Mem_manager.save_characters(character_data)
