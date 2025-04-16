@@ -136,7 +136,7 @@ class KnowledgeEngine:
     
     def _save_knowledge_base(self):
         """Save the knowledge base to disk"""
-        print(f"Saving knowledge base to {self.knowledge_file}")
+        debug_config.debug_print(f"Saving knowledge base to {self.knowledge_file}")
         with open(self.knowledge_file, 'w') as f:
             json.dump(self.knowledge_base, f, indent=2)
     
@@ -188,7 +188,7 @@ Any other format will be ignored by the system.
         """Parse the extraction result from the LLM"""
         # Check for no information response
         if "NO_NEW_INFORMATION" in extraction_text:
-            print(f"Knowledge Engine - No new information found")
+            debug_config.debug_print(f"Knowledge Engine - No new information found")
             return []
         
         try:
@@ -196,7 +196,7 @@ Any other format will be ignored by the system.
             json_match = re.search(r'(\{.*?\}|\[.*?\])', extraction_text, re.DOTALL)
             if json_match:
                 json_text = json_match.group(1)
-                if json_text.startswith('{'):
+                if (json_text.startswith('{')):
                     json_text = f"[{json_text}]"
                 extracted_items = json.loads(json_text)
 
