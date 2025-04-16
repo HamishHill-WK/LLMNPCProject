@@ -110,8 +110,6 @@ def change_simulation_npc():
 def simulate_conversation():
     npc_a = request.args.get('npc_a')
     npc_b = request.args.get('npc_b')
-    print(f"app npca: {npc_a}")
-    print(f"app npcb: {npc_b}")
     simulation_state['npc_A'] = npc_a
     simulation_state['npc_B'] = npc_b
     initial_prompt = request.args.get('simulation_input')
@@ -125,9 +123,7 @@ def simulate_conversation():
         message = initial_prompt
         
         # Simulate conversation turns
-        for i in range(turns):
-            print(f"Conversation turn {i}")
-            
+        for i in range(turns):            
             # Set up current speakers
             current_speaker = simulation_state['current_speaker']
             current_listener = simulation_state['current_listener']
@@ -317,7 +313,6 @@ def api_interact():
             Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
         
         elif knowledge_analysis['knowledge_required'] or knowledge_analysis['requires_memory']:
-            print("knowledge required")
             if 'memory_search_keywords' in knowledge_analysis:
                 data['relevant_knowledge'] = knowledge_engine.search_knowledge_base(knowledge_analysis['memory_search_keywords'])
             response = ollama_manager.get_response(data, game_state, Mem_manager)

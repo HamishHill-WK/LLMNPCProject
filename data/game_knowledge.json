@@ -11,6 +11,36 @@
           "sources": [
             "Initial player introduction upon entering the tavern."
           ]
+        },
+        {
+          "entity_name": "Player",
+          "information": "The player exists and has sent a message.",
+          "confidence": 3,
+          "first_learned": 1744810396.457221,
+          "last_updated": 1744810396.457221,
+          "sources": [
+            "The player's recent message is 'hello', indicating their presence."
+          ]
+        },
+        {
+          "entity_name": "",
+          "information": "No new information is provided regarding the player.",
+          "confidence": 1,
+          "first_learned": 1744810960.709215,
+          "last_updated": 1744810960.709215,
+          "sources": [
+            "The message 'How's it going?' does not contain specific information about the player."
+          ]
+        },
+        {
+          "entity_name": "Player A",
+          "information": "Player A sent a greeting message.",
+          "confidence": 1,
+          "first_learned": 1744811433.2602825,
+          "last_updated": 1744811433.2602825,
+          "sources": [
+            "The player's message is 'hello'."
+          ]
         }
       ],
       "background": [],
@@ -1741,6 +1771,27 @@
             "confidence": 5,
             "first_learned": 1742662585.4404132,
             "last_updated": 1742662585.4404132
+          },
+          {
+            "entity_name": "Player",
+            "information": "The player exists and has sent a message.",
+            "confidence": 3,
+            "first_learned": 1744810396.457221,
+            "last_updated": 1744810396.457221
+          },
+          {
+            "entity_name": "",
+            "information": "No new information is provided regarding the player.",
+            "confidence": 1,
+            "first_learned": 1744810960.709215,
+            "last_updated": 1744810960.709215
+          },
+          {
+            "entity_name": "Player A",
+            "information": "Player A sent a greeting message.",
+            "confidence": 1,
+            "first_learned": 1744811433.2602825,
+            "last_updated": 1744811433.2602825
           }
         ],
         "background": [],

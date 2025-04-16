@@ -7,35 +7,71 @@
 <body>
     <h1>Text Adventure Game</h1>
     <div id="game-container" class="container"> 
-        <div id="game-output">
-            <div class="system-message">Welcome to the Tavern of the Forgotten Hero...</div>
-            <div class="npc-response">{{ response }}</div>
-        </div>
-        <form id="input-form">
-            <input type="text" id="player-input" placeholder="Enter your command" autocomplete="off">
-            <button type="submit">Submit</button>
-        </form>
-        
-        <div>
-            <p><strong>Location:</strong> {{ game_state.current_location }}</p>
-            <p>
-                <strong>Speaking with:</strong>
-                <select id="npc-dropdown" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;" onchange="changeNPC(this.value)">
-                    {% for npc in game_state.all_characters %}
-                        <option value="{{ npc }}" {% if npc == game_state.current_npc %}selected{% endif %}>{{ npc }}</option>
-                    {% endfor %}
-                </select>
-                <!-- Add Clear Memories button -->
-                <button id="clear-memories" style="background-color: #993333; color: #fff; border: 1px solid #555; padding: 5px; margin-left: 10px;">
-                    Clear Memories
-                </button>
-                <!-- Add Clear Knowledge button -->
-                <button id="clear-knowledge" style="background-color: #993333; color: #fff; border: 1px solid #555; padding: 5px; margin-left: 10px;">
-                    Clear Knowledge
-                </button>
-            </p>
+        <div class="main-column">
+            <div id="game-output">
+                <div class="system-message">Welcome to the Tavern of the Forgotten Hero...</div>
+                <div class="npc-response">{{ response }}</div>
+            </div>
+            <form id="input-form">
+                <input type="text" id="player-input" placeholder="Enter your command" autocomplete="off">
+                <button type="submit">Submit</button>
+            </form>
             
-            <!-- AI Model Selection -->
+            <div>
+                <p><strong>Location:</strong> {{ game_state.current_location }}</p>
+                <p>
+                    <strong>Speaking with:</strong>
+                    <select id="npc-dropdown" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;" onchange="changeNPC(this.value)">
+                        {% for npc in game_state.all_characters %}
+                            <option value="{{ npc }}" {% if npc == game_state.current_npc %}selected{% endif %}>{{ npc }}</option>
+                        {% endfor %}
+                    </select>
+                    <!-- Add Clear Memories button -->
+                    <button id="clear-memories" style="background-color: #993333; color: #fff; border: 1px solid #555; padding: 5px; margin-left: 10px;">
+                        Clear Memories
+                    </button>
+                    <!-- Add Clear Knowledge button -->
+                    <button id="clear-knowledge" style="background-color: #993333; color: #fff; border: 1px solid #555; padding: 5px; margin-left: 10px;">
+                        Clear Knowledge
+                    </button>
+                </p>
+                
+                <div id = "npc-simulation">
+                    <div id="simulation-title-section">
+                        <h2 id="simulation-title">Simulate NPC Conversation</h2>
+                        <p> Choose two NPCs and enter a prompt to simulate a conversation between them. The conversation will be generated in real-time.
+                            NPC A will respond to the prompt, then NPC B will respond to NPC A, and so on.
+                        </p>
+                    </div>
+                    <div id="simulation-options">
+                        <div id="simulation-dropdown-container">
+                            <strong>NPC A:</strong>
+                            <select id="npc-dropdown-A" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;" onchange="changeSimNPC(this.value, 'A')">
+                                {% for npc in game_state.all_characters %}
+                                    <option value="{{ npc }}" {% if npc == simulation_state.npc_A  %}selected{% endif %}>{{ npc }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="simulation-dropdown-container-B">
+                            <strong>NPC B:</strong>
+                            <select id="npc-dropdown-B" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;" onchange="changeSimNPC(this.value, 'B')">
+                                {% for npc in game_state.all_characters %}
+                                    <option value="{{ npc }}" {% if npc == simulation_state.npc_B  %}selected{% endif %}>{{ npc }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <form id="input-form-npc">
+                            <input type="text" id="simulation-input" placeholder="Enter your initial prompt" autocomplete="off">
+                            <button type="submit">Simulate</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right sidebar with AI config -->
+        <div class="sidebar-column">
+            <!-- AI Model Selection moved to sidebar -->
             <div id="ai-config-panel">
                 <h3>AI Configuration</h3>
                 <div>
@@ -72,335 +108,17 @@
                 </button>
             </div>
         </div>
-        
-        <div id = "npc-simulation">
-            <div id="simulation-title-section">
-                <h2 id="simulation-title">Simulate NPC Conversation</h2>
-                <p> Choose two NPCs and enter a prompt to simulate a conversation between them. The conversation will be generated in real-time.
-                    NPC A will respond to the prompt, then NPC B will respond to NPC A, and so on.
-                </p>
-            </div>
-            <div id="simulation-options">
-                <div id="simulation-dropdown-container">
-                    <strong>NPC A:</strong>
-                    <select id="npc-dropdown-A" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;" onchange="changeSimNPC(this.value, 'A')">
-                        {% for npc in game_state.all_characters %}
-                            <option value="{{ npc }}" {% if npc == simulation_state.npc_A  %}selected{% endif %}>{{ npc }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div id="simulation-dropdown-container-B">
-                    <strong>NPC B:</strong>
-                    <select id="npc-dropdown-B" style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px;" onchange="changeSimNPC(this.value, 'B')">
-                        {% for npc in game_state.all_characters %}
-                            <option value="{{ npc }}" {% if npc == simulation_state.npc_B  %}selected{% endif %}>{{ npc }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <form id="input-form-npc">
-                    <input type="text" id="simulation-input" placeholder="Enter your initial prompt" autocomplete="off">
-                    <button type="submit">Simulate</button>
-                </form>
-            </div>
-        </div>
     </div>
     
+    <!-- Make available models data accessible to JavaScript -->
     <script>
-        // DOM elements
-        const outputDiv = document.getElementById('game-output');
-        const inputForm = document.getElementById('input-form');
-        const playerInput = document.getElementById('player-input');
-        const inputFormNPC = document.getElementById('input-form-npc');
-        const simulationInput = document.getElementById('simulation-input');
-        const npcDropdownA = document.getElementById('npc-dropdown-A');
-        const npcDropdownB = document.getElementById('npc-dropdown-B');
-        
-        // AI config elements
-        const aiProviderDropdown = document.getElementById('ai-provider-dropdown');
-        const modelDropdown = document.getElementById('model-dropdown');
-        const apiKeyInput = document.getElementById('api-key-input');
-        const openaiApiKeyDiv = document.getElementById('openai-api-key');
-        const updateAiConfigButton = document.getElementById('update-ai-config');
-        
-        // AI models data
         const availableModels = {
             ollama: {{ game_state.available_models.ollama|tojson }},
             openai: {{ game_state.available_models.openai|tojson }}
         };
-
-        // Auto-scroll to bottom of output
-        function scrollToBottom() {
-            outputDiv.scrollTop = outputDiv.scrollHeight;
-        }
-        
-        // Add message to the game output
-        function addMessage(message, className) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = className;
-            messageDiv.textContent = message;
-            outputDiv.appendChild(messageDiv);
-            scrollToBottom();
-        }
-        
-        // Update model dropdown options based on selected provider
-        function updateModelDropdown() {
-            const provider = aiProviderDropdown.value;
-            const models = availableModels[provider] || [];
-            
-            // Show/hide API key input for OpenAI
-            openaiApiKeyDiv.style.display = provider === 'openai' ? 'block' : 'none';
-            
-            // Clear existing options
-            modelDropdown.innerHTML = '';
-            
-            // Add new options
-            models.forEach(model => {
-                const option = document.createElement('option');
-                option.value = model;
-                option.textContent = model;
-                modelDropdown.appendChild(option);
-            });
-        }
-
-        function changeNPC(npc) {
-            fetch('/api/change_npc', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ npc_id: npc }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Add NPC response
-                addMessage(`NPC changed to ${npc}`, 'system-message');
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                addMessage('Error communicating with the server.', 'system-message');
-            });
-        }
-        
-        function changeSimNPC(npc, target) {
-            fetch('/api/change_sim_npc', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ npc_id: npc, target_id: target }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Add NPC response
-                addMessage(`NPC ${target} changed to ${npc}`, 'system-message');
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                addMessage('Error communicating with the server.', 'system-message');
-            });
-        }
-
-        // Handle form submission with AJAX
-        inputForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const input = playerInput.value.trim();
-            if (!input) return;
-            
-            // Add player input to display
-            addMessage('> ' + input, 'player-input');
-            
-            // Clear input field
-            playerInput.value = '';
-            
-            // Send request to server
-            fetch('/api/interact', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ player_input: input }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Add NPC response
-                addMessage(data.response, 'npc-response');
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                addMessage('Error communicating with the server.', 'system-message');
-            });
-        });
-
-        inputFormNPC.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const input = simulationInput.value.trim();
-            if (!input) return;
-            
-            // Add simulation input to display
-            addMessage('> ' + input, 'player-input');
-            
-            // Clear input field
-            simulationInput.value = '';
-            
-            // Close any existing EventSource
-            if (window.eventSource) {
-                window.eventSource.close();
-            }
-            
-            // Create a new EventSource for streaming
-            console.log('NPC A:', npcDropdownA.value);
-            console.log('NPC B:', npcDropdownB.value);
-            console.log('Input:', input);
-            const url = `/api/simulate_stream?simulation_input=${encodeURIComponent(input)}&npc_a=${encodeURIComponent(npcDropdownA.value)}&npc_b=${encodeURIComponent(npcDropdownB.value)}`;
-            const eventSource = new EventSource(url);
-            window.eventSource = eventSource;
-            
-            // Handle incoming message events
-            eventSource.onmessage = function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    // Add the appropriate NPC's message to the display
-                    addMessage(`${data.speaker}: ${data.message}`, 'npc-response');
-                } catch (error) {
-                    console.error('Error parsing SSE message:', error);
-                    addMessage(event.data, 'npc-response'); // Fallback to raw data
-                }
-            };
-            
-            // Handle end of conversation
-            eventSource.addEventListener('end', function() {
-                console.log('Conversation complete');
-                eventSource.close();
-            });
-            
-            // Handle errors
-            eventSource.onerror = function() {
-                console.error('SSE connection error');
-                addMessage('Connection to server lost.', 'system-message');
-                eventSource.close();
-            };
-        });
-
-        // AI provider change event
-        aiProviderDropdown.addEventListener('change', updateModelDropdown);
-        
-        // Update AI configuration
-        updateAiConfigButton.addEventListener('click', function() {
-            const provider = aiProviderDropdown.value;
-            const model = modelDropdown.value;
-            const apiKey = apiKeyInput.value.trim();
-            
-            // Show updating message
-            addMessage('Updating AI configuration...', 'system-message');
-            
-            // Send request to update configuration
-            fetch('/api/change_ai_config', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    provider: provider,
-                    model: model,
-                    api_key: apiKey
-                }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update available models in case they changed
-                    if (data.available_models) {
-                        availableModels.ollama = data.available_models.ollama || [];
-                        availableModels.openai = data.available_models.openai || [];
-                        updateModelDropdown();
-                    }
-                    
-                    addMessage(`AI configuration updated. Using ${data.ai_provider} with model ${data.selected_model}`, 'system-message');
-                } else {
-                    addMessage(`Error updating AI configuration: ${data.error || 'Unknown error'}`, 'system-message');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                addMessage(`Error communicating with the server: ${error}`, 'system-message');
-            });
-        });
-
-        // Clean up when leaving the page
-        window.addEventListener('beforeunload', function() {
-            if (window.eventSource) {
-                window.eventSource.close();
-            }
-        });
-        
-        // Clear Memories button handler
-        document.getElementById('clear-memories').addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            if (confirm('Are you sure you want to clear all character memories? This action cannot be undone.')) {
-                // Show clearing message
-                addMessage('Clearing character memories...', 'system-message');
-                
-                // Send request to clear memories
-                fetch('/api/clear_memories', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        addMessage('All character memories have been cleared successfully.', 'system-message');
-                    } else {
-                        addMessage(`Error clearing memories: ${data.error || 'Unknown error'}`, 'system-message');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    addMessage('Error communicating with the server.', 'system-message');
-                });
-            }
-        });
-        
-        // Clear Knowledge button handler
-        document.getElementById('clear-knowledge').addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            if (confirm('Are you sure you want to reset game knowledge to defaults? This action cannot be undone.')) {
-                // Show clearing message
-                addMessage('Resetting game knowledge to defaults...', 'system-message');
-                
-                // Send request to clear knowledge
-                fetch('/api/clear_knowledge', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        addMessage('Game knowledge has been reset to defaults successfully.', 'system-message');
-                    } else {
-                        addMessage(`Error resetting knowledge: ${data.error || 'Unknown error'}`, 'system-message');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    addMessage('Error communicating with the server.', 'system-message');
-                });
-            }
-        });
-        
-        // Initialize the AI model dropdown
-        updateModelDropdown();
-        
-        // Initialize the UI
-        scrollToBottom();
-        playerInput.focus();
     </script>
+    
+    <!-- Include the external JavaScript file -->
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
 </body>
 </html>
