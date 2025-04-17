@@ -86,7 +86,7 @@ class KnowledgeExecutivePlanner:
         return [word for word in message.split() if len(word) > 2 and word not in ["remember", "recall", "said", "told", "mentioned", "the", "a", "yes" ] and word not in self.patterns['greeting'] and word not in self.patterns['farewell'] and word not in self.patterns['question']]
 
     def _get_llm_analysis(self, context: DialogueContext) -> Dict[str, Any]:
-        print(f"Kep - LLM Analysis: {context.player_message}")
+        #print(f"Kep - LLM Analysis: {context.player_message}")
         """Get enhanced analysis using the LLM"""
 
         prompt = f"""<system>
@@ -126,7 +126,7 @@ Respond with ONLY a JSON object and nothing else.
             # Get response from LLM
             llm_response = self.ollama_service.get_response(data, minimal_game_state, None)
 
-            print(f"Kep - LLM Response: {llm_response}")
+            #print(f"Kep - LLM Response: {llm_response}")
             # Save LLM response for debugging
             try:
                 
@@ -178,7 +178,7 @@ Respond with ONLY a JSON object and nothing else.
             llm_analysis = self._get_llm_analysis(context)
             # Merge LLM analysis with pattern analysis, prioritizing LLM
             analysis = {**analysis, **llm_analysis}
-            print(f"KEP - LLM Analysis: {llm_analysis}")
+            #print(f"KEP - LLM Analysis: {llm_analysis}")
             
         
         return analysis

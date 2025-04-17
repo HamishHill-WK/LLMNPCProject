@@ -23,7 +23,7 @@ app.secret_key = 'your_secret_key'
 # Initialize engines and managers
 knowledge_engine = ke.KnowledgeEngine()
 executive_planner = kep.KnowledgeExecutivePlanner(knowledge_engine=knowledge_engine)
-Mem_manager = memory_manager.MemoryManager(max_short_term=3, knowledge_engine=knowledge_engine)
+Mem_manager = memory_manager.MemoryManager(max_short_term=3, max_long_term=3, knowledge_engine=knowledge_engine)
 prompt_engine = pe.Prompt_Engine(memory_manager=Mem_manager, knowledge_engine=knowledge_engine)
 
 # Initialize AI manager
@@ -356,10 +356,10 @@ def api_interact():
         #     response, chain_of_thought = ollama_manager.clean_response(response)
         #     Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
 
-        print(knowledge_analysis)
+        #print(knowledge_analysis)
 
         if 'knowledge_query' in knowledge_analysis:
-            print("Knowledge query detected")
+            #print("Knowledge query detected")
             if knowledge_analysis['knowledge_required'] and 'memory_search_keywords' in knowledge_analysis:
                 data['relevant_knowledge'] = knowledge_engine.search_knowledge_base(knowledge_analysis['memory_search_keywords'])
             
@@ -368,17 +368,17 @@ def api_interact():
             Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
                 
         elif 'requires_memory' in knowledge_analysis:
-            print("Memory required")
+            #print("Memory required")
             if knowledge_analysis['requires_memory'] and 'memory_search_keywords' in knowledge_analysis:
                 data['relevant_knowledge'] = knowledge_engine.search_knowledge_base(knowledge_analysis['memory_search_keywords'])
             
             response = ollama_manager.get_response(data, game_state, Mem_manager)
-            print("Response:", response) 
+            #print("Response:", response) 
             response, chain_of_thought = ollama_manager.clean_response(response)
             Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])
                 
         else:
-            print("No knowledge query or memory required, using default response")
+            #print("No knowledge query or memory required, using default response")
             response = ollama_manager.get_response(data, game_state, Mem_manager)
             response, chain_of_thought = ollama_manager.clean_response(response)
             Mem_manager.add_interaction(game_state['current_npc'], "Player", player_input, response, chain_of_thought, game_state['current_location'])

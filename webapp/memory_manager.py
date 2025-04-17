@@ -82,7 +82,7 @@ class MemoryManager:
             
             self.memories[character_id]["long_term"].append(oldest_memory)
             if len (self.memories[character_id]["long_term"]) > self.max_long_term:
-                self.memories[character_id]["summary"] = self.summarize_long_term(character_id)
+                self.memories[character_id]["summary"], self.memories[character_id]["summary_cof"] = self.summarize_long_term(character_id)
                 self.memories[character_id]["long_term"] = []
         
         # Save updated memories
@@ -162,8 +162,8 @@ Resolve any contradictions by favoring newer information.
         }, None, None)
         
         
-        print(f"Memory summary for {character_name}: {response}")
+        #print(f"Memory summary for {character_name}: {response}")
 
-        response = self.ollama.clean_response(response)
+        response, chain_of_thought = self.ollama.clean_response(response)
         
-        return response
+        return response, chain_of_thought
