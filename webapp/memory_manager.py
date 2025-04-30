@@ -138,7 +138,7 @@ class MemoryManager:
         if old_summary != "":
             prompt = f"""
 <system>
-Summarize the following information into a concise character memory from the point of view of . Integrate the previous summary 
+Summarize the following information into a concise character memory from the point of view of {character_name}. Integrate the previous summary 
 with new interactions to create a comprehensive, updated understanding:
 
 {old_summary}
