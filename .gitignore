@@ -9,3 +9,15 @@ data/extraction_results/
 data/extraction_prompts/
 data/debug/
 data/validation_logs/
+debug/
+testprompts/
+testprompts1b/
+testpromptsllama/
+convert.py
+data.ipynb
+claude_evaluations.csv
+ClaudeEvalAvgs.csv
+minimal.py
+npc tests.csv
+human_evaluations.csv
+HumanEvalAvgs.csv
