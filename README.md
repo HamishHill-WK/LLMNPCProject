@@ -132,6 +132,7 @@ The system supports:
 - Python 3.8+
 - Flask and related web packages
 - Access to Ollama for local LLM hosting or OpenAI API key
+- Download Ollama here https://ollama.com/
 - Character definition files in the proper format
 
 ### Running the Application
