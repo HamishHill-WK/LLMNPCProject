@@ -1,5 +1,27 @@
 # LLM NPC - Dynamic NPC prototype
 
+## Setup and Usage
+
+### Requirements
+
+- Python 3.8+
+- Flask and related web packages
+- Access to Ollama for local LLM hosting or OpenAI API key
+- Download Ollama here https://ollama.com/
+- once installed run
+
+        ollama run deepseek-r1:8b
+
+
+### Running the Application
+
+1. Ensure all required components are installed
+2. Configure local LLM service or API access
+3. To start the web server run
+   
+       python webapp/app.py
+5. Access the game interface at `http://127.0.0.1:5001`
+
 ## Problem
 
 In computer games players often interact with other entities in the game which are labelled non-player characters (NPCs). NPC dialogue is usually completely pre-scripted which can make the experience of interacting with them repetitive, they also usually lack the ability to dynamically produce dialogue which reflects changes in their environment. Players are often limited to a small number of pre-scripted options to interact with NPCs in dialogue sections, which can make players feel limited in their options for interacting with the characters in a game.
@@ -125,22 +147,7 @@ The system supports:
 - Natural language understanding and generation
 - Context-aware responses
 
-## Setup and Usage
 
-### Requirements
-
-- Python 3.8+
-- Flask and related web packages
-- Access to Ollama for local LLM hosting or OpenAI API key
-- Download Ollama here https://ollama.com/
-- Character definition files in the proper format
-
-### Running the Application
-
-1. Ensure all required components are installed
-2. Configure local LLM service or API access
-3. Run `python webapp/app.py` to start the web server
-4. Access the game interface at `http://127.0.0.1:5001`
 
 ### Extending the Game
 
