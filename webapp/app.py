@@ -30,6 +30,10 @@ app.secret_key = os.environ.get("SECRET_KEY", "your_secret_key")
 MAX_CACHE_SIZE = int(os.environ.get("MAX_CACHE_SIZE", "100"))
 CACHE_EXPIRY_TIME = int(os.environ.get("CACHE_EXPIRY_TIME", "60"))
 
+# Models from compose.yaml to track
+TRACKED_MODELS = ['deepseek-r1:8b', 'deepseek-r1:1.5b', 'llama2:7b']
+model_status = {model: {'downloaded': False, 'in_progress': False, 'error': None} for model in TRACKED_MODELS}
+
 # Game state defaults
 DEFAULT_LOCATION = os.environ.get("DEFAULT_LOCATION", "tavern")
 DEFAULT_NPC = os.environ.get("DEFAULT_NPC", "tavernkeeper")
@@ -48,6 +52,8 @@ prompt_engine = pe.Prompt_Engine(memory_manager=Mem_manager, knowledge_engine=kn
 ollama_manager = om.OllamaManager(prompt_engine=prompt_engine)
 
 # AI service configuration
+ollama_base_url = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+
 ai_config = {
     'provider': os.environ.get("AI_PROVIDER", "ollama"),
     'model': os.environ.get("DEFAULT_OLLAMA_MODEL", "deepseek-r1:8b"),
@@ -131,6 +137,61 @@ def change_npc():
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/execute_ollama_command', methods=['POST'])
+def execute_ollama_command():
+    """Execute an Ollama command from the UI"""
+    try:
+        data = request.json
+        if not data or 'command' not in data:
+            return jsonify({"success": False, "error": "Missing command"}), 400
+            
+        command = data['command']
+        logger.info(f"Executing Ollama command: {command}")
+        
+        # Security check - only allow specific commands
+        if not command.startswith(('ollama pull', 'ollama run', 'ollama list')):
+            return jsonify({
+                "success": False,
+                "error": "Only 'ollama pull', 'ollama run', and 'ollama list' commands are allowed"
+            }), 400
+        
+        # Execute the command
+        import subprocess
+        process = subprocess.Popen(
+            command, 
+            shell=True, 
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
+        
+        stdout, stderr = process.communicate()
+        
+        # Check if the command was successful
+        if process.returncode == 0:
+            # Refresh available models list if it was a pull command
+            if command.startswith('ollama pull'):
+                ollama_manager.available_models['ollama'] = ollama_manager.get_ollama_models()
+                game_state['available_models'] = ollama_manager.available_models
+            
+            return jsonify({
+                "success": True,
+                "output": stdout,
+                "available_models": ollama_manager.available_models
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": stderr or "Command failed"
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error executing Ollama command: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 @app.route('/api/change_sim_npc', methods=['POST'])
 def change_simulation_npc():
@@ -535,6 +596,58 @@ def refresh_models():
         })
     except Exception as e:
         logger.error(f"Error refreshing models: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/api/model_status', methods=['GET'])
+def check_model_status():
+    """API endpoint to check the download status of tracked models"""
+    try:
+        # Update model status for all tracked models
+        for model_name in TRACKED_MODELS:
+            try:
+                # Check if the model is in the available models list
+                available_models = ollama_manager.get_ollama_models()
+                if model_name in available_models:
+                    model_status[model_name]['downloaded'] = True
+                    model_status[model_name]['in_progress'] = False
+                    model_status[model_name]['error'] = None
+                else:
+                    # If not available, check if it's being downloaded
+                    # This uses a command to check Ollama's status
+                    import subprocess
+                    process = subprocess.Popen(
+                        f"ollama list", 
+                        shell=True, 
+                        stdout=subprocess.PIPE, 
+                        stderr=subprocess.PIPE,
+                        universal_newlines=True
+                    )
+                    stdout, stderr = process.communicate()
+                    
+                    # Check for "pulling" status in the output
+                    if model_name in stdout and "pulling" in stdout.lower():
+                        model_status[model_name]['in_progress'] = True
+                        model_status[model_name]['downloaded'] = False
+                    elif model_status[model_name]['in_progress']:
+                        # If it was in progress before but not found in pulling status
+                        # and not in available models, it might have failed
+                        model_status[model_name]['in_progress'] = False
+                        model_status[model_name]['error'] = "Download may have failed"
+            except Exception as e:
+                logger.error(f"Error checking status for model {model_name}: {e}")
+                model_status[model_name]['error'] = str(e)
+                
+        # Return the current status of all tracked models
+        return jsonify({
+            "success": True,
+            "model_status": model_status,
+            "available_models": ollama_manager.available_models['ollama']
+        })
+    except Exception as e:
+        logger.error(f"Error checking model status: {e}")
         return jsonify({
             "success": False,
             "error": str(e)

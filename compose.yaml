@@ -64,6 +64,10 @@ services:
        sleep 5 && 
        echo 'Downloading required models...' && 
        ollama pull deepseek-r1:8b && 
+       echo 'Downloading additional model deepseek-r1:1.5b...' && 
+       ollama pull deepseek-r1:1.5b && 
+       echo 'Downloading additional model llama2...' && 
+       ollama pull llama2:7b && 
        echo 'Model downloaded successfully' &&
        echo 'Setting up model list updater...' &&
        (while true; do 

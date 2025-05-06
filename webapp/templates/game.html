@@ -97,9 +97,11 @@
                             {% endfor %}
                         {% endif %}
                     </select>
-                    <button id="refresh-models" style="margin-top: 5px; background-color: #444; color: #ccc; padding: 5px 10px;">
-                        Refresh Models
-                    </button>
+                    <div style="margin-top: 5px; display: flex; gap: 5px;">
+                        <button id="refresh-models" style="background-color: #444; color: #ccc; padding: 5px 10px; flex: 1;">
+                            Refresh Models
+                        </button>
+                    </div>
                 </div>
                 
                 <div id="openai-api-key" style="{% if game_state.ai_provider != 'openai' %}display: none;{% endif %}">
@@ -108,9 +110,72 @@
                            style="background-color: #333; color: #ccc; border: 1px solid #555; padding: 5px; width: 100%; margin-top: 5px;">
                 </div>
                 
+                <!-- Model download status section -->
+                <div id="model-status-panel" style="margin-top: 15px; background-color: #2a2a2a; padding: 10px; border: 1px solid #555;">
+                    <h4 style="margin-top: 0; margin-bottom: 10px;">Model Download Status</h4>
+                    <div id="model-status-container">
+                        <div class="model-status-item" data-model="deepseek-r1:8b">
+                            <span class="model-name">deepseek-r1:8b</span>
+                            <span class="model-status-indicator" style="float: right; padding: 2px 6px; border-radius: 3px; background-color: #444; color: #ccc;">Checking...</span>
+                        </div>
+                        <div class="model-status-item" data-model="deepseek-r1:1.5b">
+                            <span class="model-name">deepseek-r1:1.5b</span>
+                            <span class="model-status-indicator" style="float: right; padding: 2px 6px; border-radius: 3px; background-color: #444; color: #ccc;">Checking...</span>
+                        </div>
+                        <div class="model-status-item" data-model="llama2:7b">
+                            <span class="model-name">llama2:7b</span>
+                            <span class="model-status-indicator" style="float: right; padding: 2px 6px; border-radius: 3px; background-color: #444; color: #ccc;">Checking...</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <button id="update-ai-config" style="margin-top: 10px; background-color: #444; color: #ccc; padding: 5px 10px;">
                     Update AI Configuration
                 </button>
+                <div id="download-model-modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7);">
+                    <div style="background-color: #333; margin: 15% auto; padding: 20px; border: 1px solid #555; width: 80%; max-width: 500px;">
+                        <h3 style="margin-top: 0; color: #d4e0d4;">Download Ollama Model</h3>
+                        
+                        <!-- Tabs for different download methods -->
+                        <div style="display: flex; margin-bottom: 15px;">
+                            <button id="tab-preset" class="modal-tab active" style="flex: 1; background-color: #444; color: #ccc; border: none; padding: 8px; cursor: pointer; border-bottom: 2px solid #6a6;">Preset Models</button>
+                            <button id="tab-command" class="modal-tab" style="flex: 1; background-color: #333; color: #ccc; border: none; padding: 8px; cursor: pointer;">Terminal Command</button>
+                        </div>
+                        
+                        <!-- Preset models panel -->
+                        <div id="panel-preset" class="modal-panel" style="display: block;">
+                            <p>Select or enter the model you want to download:</p>
+                            <select id="model-download-preset" style="width: 100%; background-color: #222; color: #ccc; border: 1px solid #555; padding: 5px; margin-bottom: 10px;">
+                                <option value="">-- Select a preset model --</option>
+                                <option value="llama2">llama2</option>
+                                <option value="llama2:13b">llama2:13b</option>
+                                <option value="mistral">mistral</option>
+                                <option value="mistral:7b-instruct">mistral:7b-instruct</option>
+                                <option value="gemma:7b">gemma:7b</option>
+                                <option value="codellama">codellama</option>
+                                <option value="deepseek-coder">deepseek-coder</option>
+                                <option value="neural-chat">neural-chat</option>
+                                <option value="phi2">phi2</option>
+                            </select>
+                            <input type="text" id="model-download-input" placeholder="Or type custom model name" style="width: 100%; background-color: #222; color: #ccc; border: 1px solid #555; padding: 5px;">
+                        </div>
+                        
+                        <!-- Command panel -->
+                        <div id="panel-command" class="modal-panel" style="display: none;">
+                            <p>Enter an Ollama command to execute:</p>
+                            <input type="text" id="ollama-command-input" placeholder="ollama pull llama2:13b" style="width: 100%; background-color: #222; color: #ccc; border: 1px solid #555; padding: 5px;">
+                            <p class="help-text" style="font-size: 0.8em; color: #999;">
+                                Supported commands: <code>ollama pull [model]</code>, <code>ollama list</code>
+                            </p>
+                        </div>
+                        
+                        <div style="margin-top: 15px;">
+                            <button id="start-download" style="background-color: #446644; color: #ccc; border: none; padding: 8px 15px; cursor: pointer;">Execute</button>
+                            <button id="cancel-download" style="background-color: #664444; color: #ccc; border: none; padding: 8px 15px; margin-left: 10px; cursor: pointer;">Cancel</button>
+                        </div>
+                        <div id="download-status" style="margin-top: 10px; color: #cccc88; max-height: 100px; overflow-y: auto;"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

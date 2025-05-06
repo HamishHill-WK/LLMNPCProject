@@ -14,7 +14,6 @@ const modelDropdown = document.getElementById('model-dropdown');
 const apiKeyInput = document.getElementById('api-key-input');
 const openaiApiKeyDiv = document.getElementById('openai-api-key');
 const updateAiConfigButton = document.getElementById('update-ai-config');
-
 // Inference time tracking variables
 let requestStartTime = 0;
 
@@ -44,6 +43,61 @@ function showLoadingIndicator() {
 // Hide loading indicator
 function hideLoadingIndicator() {
     loadingIndicator.style.display = 'none';
+}
+
+// Update model status indicators
+function updateModelStatus() {
+    // Fetch model status from server
+    fetch('/api/model_status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const statusContainer = document.getElementById('model-status-container');
+                const modelStatuses = data.model_status;
+                
+                // Update UI for each model
+                for (const modelName in modelStatuses) {
+                    const modelStatus = modelStatuses[modelName];
+                    const modelItem = document.querySelector(`.model-status-item[data-model="${modelName}"]`);
+                    
+                    if (modelItem) {
+                        const statusIndicator = modelItem.querySelector('.model-status-indicator');
+                        
+                        if (modelStatus.downloaded) {
+                            statusIndicator.textContent = 'Available';
+                            statusIndicator.style.backgroundColor = '#385538';
+                            statusIndicator.style.color = '#aaffaa';
+                        } else if (modelStatus.in_progress) {
+                            statusIndicator.textContent = 'Downloading...';
+                            statusIndicator.style.backgroundColor = '#555538';
+                            statusIndicator.style.color = '#ffffaa';
+                        } else if (modelStatus.error) {
+                            statusIndicator.textContent = 'Error';
+                            statusIndicator.style.backgroundColor = '#553838';
+                            statusIndicator.style.color = '#ffaaaa';
+                            statusIndicator.title = modelStatus.error;
+                        } else {
+                            statusIndicator.textContent = 'Pending';
+                            statusIndicator.style.backgroundColor = '#444';
+                            statusIndicator.style.color = '#ccc';
+                        }
+                    }
+                }
+                
+                // If all models are downloaded, update the available models list
+                const allDownloaded = Object.values(modelStatuses).every(status => status.downloaded);
+                if (allDownloaded) {
+                    // Update the models dropdown if all models are downloaded
+                    if (data.available_models) {
+                        availableModels.ollama = data.available_models;
+                        updateModelDropdown();
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error checking model status:', error);
+        });
 }
 
 // Update model dropdown options based on selected provider
@@ -404,6 +458,15 @@ function initializeApp() {
     // Initialize the UI
     scrollToBottom();
     playerInput.focus();
+    
+    // Initial model status check
+    updateModelStatus();
+    
+    // Set up periodic model status checking (every 5 seconds)
+    const modelStatusInterval = setInterval(updateModelStatus, 5000);
+    
+    // Store the interval ID so it can be cleared if needed
+    window.modelStatusInterval = modelStatusInterval;
 }
 
 // Initialize when DOM is loaded
