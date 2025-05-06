@@ -194,6 +194,11 @@ root/
     ├── memory_manager.py      # Memory tracking system
     ├── ollama_manager.py      # LLM service integration
     ├── prompt_engine.py       # Prompt construction system
+    ├── static/
+    │    ├── css/
+    │    │   └── style.css
+    │    └── js/
+             └── game.js
     └── templates/             # Web interface templates
         └── game.html          # Main game interface
 ```
