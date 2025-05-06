@@ -9,20 +9,24 @@ class MemoryManager:
     def __init__(self, max_short_term=3, max_long_term = 3, characters={}, knowledge_engine=None, ollama=None):
         """Initialize memory manager with specified max short-term memories"""
         self.memories = {}
-        self.max_short_term = max_short_term
-        self.max_long_term = max_long_term
+        self.max_short_term = int(os.environ.get("MAX_SHORT_TERM_MEMORY", max_short_term))
+        self.max_long_term = int(os.environ.get("MAX_LONG_TERM_MEMORY", max_long_term))
         self.characters = characters
         self.knowledge_engine = knowledge_engine
         self.ollama = ollama
+        self.memory_file = os.environ.get("MEMORY_FILE", "data/memories.json")
+        self.debug_mode = os.environ.get("DEBUG_MODE", "false").lower() == "true"
         
         # Create data directory if it doesn't exist
         if not os.path.exists('data'):
             os.makedirs('data')
         
         # Load existing memories if available
-        if os.path.exists('data/memories.json'):
-            with open('data/memories.json', 'r') as f:
+        if os.path.exists(self.memory_file):
+            with open(self.memory_file, 'r') as f:
                 self.memories = json.load(f)
+            if self.debug_mode:
+                print(f"Loaded memories from {self.memory_file}")
     
     def save_characters(self, characters):
         """Load characters into memory manager"""
@@ -34,7 +38,7 @@ class MemoryManager:
     
     def save_memories(self):
         """Save memories to disk"""
-        with open('data/memories.json', 'w') as f:
+        with open(self.memory_file, 'w') as f:
             json.dump(self.memories, f, indent=2)
     
     def add_interaction(self, character_id, other_id, other_message, character_response, chain_of_thought, location):
@@ -132,7 +136,7 @@ class MemoryManager:
         old_summary = ""
         
         if "summary" in self.memories[character_id]:
-            old_summary = f"PREVIOUS SUMMARY:\n{self.memories[character_id]["summary"]}"
+            old_summary = f"PREVIOUS SUMMARY:\n{self.memories[character_id]['summary']}"
         
         prompt = ""
         if old_summary != "":

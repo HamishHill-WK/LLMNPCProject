@@ -12,6 +12,8 @@
                 <div class="system-message">Welcome to the Tavern of the Forgotten Hero...</div>
                 <div class="npc-response">{{ response }}</div>
             </div>
+            <!-- Loading indicator will be shown when waiting for a response -->
+            <div id="loading-indicator" class="loading-indicator">Generating response, please wait...</div>
             <form id="input-form">
                 <input type="text" id="player-input" placeholder="Enter your command" autocomplete="off">
                 <button type="submit">Submit</button>
@@ -95,6 +97,9 @@
                             {% endfor %}
                         {% endif %}
                     </select>
+                    <button id="refresh-models" style="margin-top: 5px; background-color: #444; color: #ccc; padding: 5px 10px;">
+                        Refresh Models
+                    </button>
                 </div>
                 
                 <div id="openai-api-key" style="{% if game_state.ai_provider != 'openai' %}display: none;{% endif %}">

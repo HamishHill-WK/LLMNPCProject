@@ -6,6 +6,7 @@ const inputFormNPC = document.getElementById('input-form-npc');
 const simulationInput = document.getElementById('simulation-input');
 const npcDropdownA = document.getElementById('npc-dropdown-A');
 const npcDropdownB = document.getElementById('npc-dropdown-B');
+const loadingIndicator = document.getElementById('loading-indicator');
 
 // AI config elements
 const aiProviderDropdown = document.getElementById('ai-provider-dropdown');
@@ -32,6 +33,17 @@ function addMessage(message, className) {
     messageDiv.textContent = message;
     outputDiv.appendChild(messageDiv);
     scrollToBottom();
+}
+
+// Show loading indicator
+function showLoadingIndicator() {
+    loadingIndicator.style.display = 'block';
+    scrollToBottom();
+}
+
+// Hide loading indicator
+function hideLoadingIndicator() {
+    loadingIndicator.style.display = 'none';
 }
 
 // Update model dropdown options based on selected provider
@@ -124,6 +136,9 @@ function initializeEventListeners() {
         const submitButton = inputForm.querySelector('button[type="submit"]');
         if (submitButton) submitButton.disabled = true;
         
+        // Show loading indicator
+        showLoadingIndicator();
+        
         // Send request to server
         fetch('/api/interact', {
             method: 'POST',
@@ -157,6 +172,8 @@ function initializeEventListeners() {
             playerInput.disabled = false;
             if (submitButton) submitButton.disabled = false;
             playerInput.focus();
+            // Hide loading indicator
+            hideLoadingIndicator();
         });
     });
 
@@ -220,6 +237,51 @@ function initializeEventListeners() {
 
     // AI provider change event
     aiProviderDropdown.addEventListener('change', updateModelDropdown);
+    
+    // Refresh models button handler
+    document.getElementById('refresh-models').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Show refreshing message
+        addMessage('Refreshing available models...', 'system-message');
+        
+        // Disable the refresh button during request
+        const refreshButton = document.getElementById('refresh-models');
+        refreshButton.disabled = true;
+        refreshButton.textContent = 'Refreshing...';
+        
+        // Send request to refresh models
+        fetch('/api/refresh_models', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update available models
+                if (data.available_models) {
+                    availableModels.ollama = data.available_models.ollama || [];
+                    availableModels.openai = data.available_models.openai || [];
+                    updateModelDropdown();
+                }
+                
+                addMessage('Available models have been refreshed successfully.', 'system-message');
+            } else {
+                addMessage(`Error refreshing models: ${data.error || 'Unknown error'}`, 'system-message');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            addMessage(`Error communicating with the server: ${error}`, 'system-message');
+        })
+        .finally(() => {
+            // Re-enable the refresh button
+            refreshButton.disabled = false;
+            refreshButton.textContent = 'Refresh Models';
+        });
+    });
     
     // Update AI configuration
     updateAiConfigButton.addEventListener('click', function() {

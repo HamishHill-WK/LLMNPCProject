@@ -5,6 +5,7 @@ import datetime
 import re
 import logging
 import openai
+import socket
 from typing import Dict, Any, List, Tuple
 
 # Configure logging
@@ -15,8 +16,18 @@ class OllamaManager:
     def __init__(self, prompt_engine):
         self.prompt_engine = prompt_engine
         
+        # Get configuration from environment variables
+        self.ollama_host = os.environ.get("OLLAMA_HOST", "localhost")
+        self.ollama_port = os.environ.get("OLLAMA_PORT", "11434")
+        self.default_ollama_model = os.environ.get("DEFAULT_OLLAMA_MODEL", "deepseek-r1:8b")
+        self.default_openai_model = os.environ.get("DEFAULT_OPENAI_MODEL", "gpt-3.5-turbo")
+        self.debug_prompts = os.environ.get("DEBUG_PROMPTS", "true").lower() == "true"
+        
+        # Check if ollama hostname resolves, otherwise fallback to localhost
+        self.check_ollama_connection()
+        
         # AI provider settings
-        self.ai_provider = "ollama"  # Default to ollama
+        self.ai_provider = os.environ.get("AI_PROVIDER", "ollama")
         self.openai_api_key = os.environ.get("OPENAI_API_KEY", "")
         self.openai_client = None
         if self.openai_api_key:
@@ -36,9 +47,36 @@ class OllamaManager:
         self.selected_model = (
             self.available_models["ollama"][0] 
             if self.available_models["ollama"] 
-            else "unknown"
+            else self.default_ollama_model
         )
-    
+        
+        # Log configuration
+        logger.info(f"OllamaManager initialized with: Ollama host={self.ollama_host}:{self.ollama_port}, Provider={self.ai_provider}")
+
+    def check_ollama_connection(self):
+        """Check if ollama hostname resolves, otherwise fallback to localhost"""
+        try:
+            # First try the configured host
+            requests.get(f"http://{self.ollama_host}:{self.ollama_port}/api/version", timeout=1)
+            logger.info(f"Successfully connected to Ollama at {self.ollama_host}:{self.ollama_port}")
+        except requests.exceptions.ConnectionError:
+            # If that fails, try localhost
+            try:
+                if self.ollama_host != "localhost":
+                    logger.info(f"Could not connect to {self.ollama_host}, trying localhost")
+                    requests.get(f"http://localhost:{self.ollama_port}/api/version", timeout=1)
+                    logger.info(f"Successfully connected to Ollama at localhost:{self.ollama_port}")
+                    self.ollama_host = "localhost"
+                else:
+                    logger.warning(f"Could not connect to Ollama at {self.ollama_host}:{self.ollama_port}")
+            except requests.exceptions.ConnectionError:
+                # If localhost doesn't work either, we'll keep the original setting
+                # but warn the user
+                logger.warning(f"Could not connect to Ollama at localhost:{self.ollama_port}")
+                logger.warning("Please ensure Ollama is running")
+        except Exception as e:
+            logger.error(f"Error checking Ollama connection: {str(e)}")
+
     def set_ai_provider(self, provider, model=None, api_key=None):
         """Set the AI provider and optionally the model and API key"""
         if provider not in ["ollama", "openai"]:
@@ -89,7 +127,7 @@ class OllamaManager:
         """Get response from Ollama API"""
         try:
             response = requests.post(
-                "http://localhost:11434/api/generate",
+                f"http://{self.ollama_host}:{self.ollama_port}/api/generate",
                 headers={"Content-Type": "application/json"},
                 data=json.dumps(data)
             )
@@ -181,7 +219,7 @@ class OllamaManager:
             list: A list of available model names.
         """
         try:
-            response = requests.get("http://localhost:11434/api/tags")
+            response = requests.get(f"http://{self.ollama_host}:{self.ollama_port}/api/tags")
             response.raise_for_status()  # Raises HTTPError for bad responses
             data = response.json()
             return [model['name'] for model in data.get('models', [])]

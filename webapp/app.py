@@ -7,23 +7,41 @@ import memory_manager
 import ollama_manager as om
 import re
 import knowledge_engine as ke
-import executive as kep  # Import the new module
+import executive as kep
 import logging
 import time
+from dotenv import load_dotenv
+
+# Load environment variables from .env file if present
+load_dotenv()
 
 # Set up logger
+log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(getattr(logging, log_level))
 handler = logging.StreamHandler()
 logger.addHandler(handler)
 
+# Flask application setup
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
+app.secret_key = os.environ.get("SECRET_KEY", "your_secret_key")
+
+# Cache configuration
+MAX_CACHE_SIZE = int(os.environ.get("MAX_CACHE_SIZE", "100"))
+CACHE_EXPIRY_TIME = int(os.environ.get("CACHE_EXPIRY_TIME", "60"))
+
+# Game state defaults
+DEFAULT_LOCATION = os.environ.get("DEFAULT_LOCATION", "tavern")
+DEFAULT_NPC = os.environ.get("DEFAULT_NPC", "tavernkeeper")
 
 # Initialize engines and managers
 knowledge_engine = ke.KnowledgeEngine()
 executive_planner = kep.KnowledgeExecutivePlanner(knowledge_engine=knowledge_engine)
-Mem_manager = memory_manager.MemoryManager(max_short_term=3, max_long_term=3, knowledge_engine=knowledge_engine)
+Mem_manager = memory_manager.MemoryManager(
+    max_short_term=int(os.environ.get("MAX_SHORT_TERM_MEMORY", "3")),
+    max_long_term=int(os.environ.get("MAX_LONG_TERM_MEMORY", "3")), 
+    knowledge_engine=knowledge_engine
+)
 prompt_engine = pe.Prompt_Engine(memory_manager=Mem_manager, knowledge_engine=knowledge_engine)
 
 # Initialize AI manager
@@ -31,32 +49,31 @@ ollama_manager = om.OllamaManager(prompt_engine=prompt_engine)
 
 # AI service configuration
 ai_config = {
-    'provider': 'ollama',  # Default to ollama
-    'model': 'deepseek-r1:8b',  # Default ollama model
-    'openai_model': 'gpt-3.5-turbo',  # Default OpenAI model
+    'provider': os.environ.get("AI_PROVIDER", "ollama"),
+    'model': os.environ.get("DEFAULT_OLLAMA_MODEL", "deepseek-r1:8b"),
+    'openai_model': os.environ.get("DEFAULT_OPENAI_MODEL", "gpt-3.5-turbo"),
     'available_models': {
         'ollama': ollama_manager.available_models.get('ollama', []),
         'openai': ollama_manager.available_models.get('openai', [])
     }
 }
 
-# Use the enhanced ollama_manager for all AI requests
-
 # Simple game state
 game_state = {
-    'current_location': 'tavern',
-    'current_npc': 'tavernkeeper',
+    'current_location': DEFAULT_LOCATION,
+    'current_npc': DEFAULT_NPC,
     'all_characters': [],
     'inventory': [],
     'ai_config': ai_config
 }
 
+# Simulation state
 simulation_state = {
-    'current_location': 'tavern',
+    'current_location': DEFAULT_LOCATION,
     'current_speaker' : 'npc_A',
     'current_listener' : 'npc_B',
-    'npc_A': 'tavernkeeper',
-    'npc_B': 'blacksmith',
+    'npc_A': DEFAULT_NPC,
+    'npc_B': os.environ.get("DEFAULT_SIM_NPC", "blacksmith"),
     'initial_prompt': 'You are in a tavern. The tavernkeeper greets you with a smile.',
     'all_characters': [],
     'inventory': [],
@@ -494,6 +511,35 @@ def clear_knowledge():
             "error": str(e)
         }), 500
 
+@app.route('/api/refresh_models', methods=['POST'])
+def refresh_models():
+    """API endpoint to refresh the list of available models"""
+    try:
+        logger.info("Refreshing available models list")
+        
+        # Refresh Ollama models
+        ollama_manager.available_models['ollama'] = ollama_manager.get_ollama_models()
+        
+        # Refresh OpenAI models if applicable
+        if ollama_manager.ai_provider == 'openai' and ollama_manager.openai_api_key:
+            ollama_manager.available_models['openai'] = ollama_manager.get_openai_models()
+        
+        # Update game state
+        game_state['available_models'] = ollama_manager.available_models
+        
+        logger.info(f"Models refreshed: {ollama_manager.available_models}")
+        
+        return jsonify({
+            "success": True,
+            "available_models": ollama_manager.available_models
+        })
+    except Exception as e:
+        logger.error(f"Error refreshing models: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 if __name__ == '__main__':
     character_data = prompt_engine.load_characters()
     Mem_manager.save_characters(character_data)
@@ -503,4 +549,5 @@ if __name__ == '__main__':
     simulation_state['all_characters'] = character_data    
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         webbrowser.open('http://127.0.0.1:5001')
-    app.run(debug=True, port=5001)
+    #app.run(debug=True, port=5001)
+    app.run(host='0.0.0.0', debug=True, port=5001)
