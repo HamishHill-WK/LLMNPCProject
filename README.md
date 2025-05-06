@@ -198,7 +198,7 @@ root/
     │    ├── css/
     │    │   └── style.css
     │    └── js/
-             └── game.js
+    │         └── game.js
     └── templates/             # Web interface templates
         └── game.html          # Main game interface
 ```
