@@ -9,10 +9,15 @@ With docker installed run:
         docker compose up --build
 
 The web app will be available on 127.0.0.1:5001
+
 The LLMs will begin downloading right away but it can take up to 5 minutes per model
+
 Ollama image is included in the docker container
+
 Other open source models are available at: https://ollama.com/search
+
 if you want to add more models then add them under ollama:command:> in compose.yaml
+
 example: ollama pull deepseek-r1:1.5b && 
 
 
