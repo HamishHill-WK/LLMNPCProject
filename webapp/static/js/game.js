@@ -31,7 +31,6 @@ function addMessage(message, className) {
     messageDiv.className = className;
     messageDiv.textContent = message;
     outputDiv.appendChild(messageDiv);
-    scrollToBottom();
 }
 
 // Show loading indicator

@@ -41,6 +41,16 @@
           "sources": [
             "The player's message is 'hello'."
           ]
+        },
+        {
+          "entity_name": "",
+          "information": "The player greeted with 'hello'",
+          "confidence": 1,
+          "first_learned": 1746540559.6747541,
+          "last_updated": 1746540559.6747544,
+          "sources": [
+            "message"
+          ]
         }
       ],
       "background": [],
@@ -78,7 +88,18 @@
           ]
         }
       ],
-      "goals": [],
+      "goals": [
+        {
+          "entity_name": "Player",
+          "information": "The player has sent a greeting, indicating an intent to socialize.",
+          "confidence": 3,
+          "first_learned": 1746540414.2870166,
+          "last_updated": 1746540414.2870169,
+          "sources": [
+            "The entire message 'hello' implies a social interaction."
+          ]
+        }
+      ],
       "relationships": [],
       "preferences": [
         {
@@ -1369,6 +1390,16 @@
           "sources": [
             "Archaeological findings and scholarly texts."
           ]
+        },
+        {
+          "entity_name": "",
+          "information": "",
+          "confidence": 1,
+          "first_learned": 1746538587.9706726,
+          "last_updated": 1746538587.970673,
+          "sources": [
+            ""
+          ]
         }
       ],
       "cultural": [
@@ -1820,7 +1851,15 @@
             "last_updated": 1742662880.1815186
           }
         ],
-        "goals": [],
+        "goals": [
+          {
+            "entity_name": "Player",
+            "information": "The player has sent a greeting, indicating an intent to socialize.",
+            "confidence": 3,
+            "first_learned": 1746540414.2870207,
+            "last_updated": 1746540414.2870207
+          }
+        ],
         "relationships": [],
         "preferences": [
           {
@@ -1968,6 +2007,13 @@
             "confidence": 5,
             "first_learned": 1743013667.8055065,
             "last_updated": 1743013667.8055065
+          },
+          {
+            "entity_name": "",
+            "information": "",
+            "confidence": 1,
+            "first_learned": 1746538587.9706798,
+            "last_updated": 1746538587.97068
           }
         ],
         "cultural": [],
@@ -2384,6 +2430,13 @@
             "confidence": 3,
             "first_learned": 1742662585.4404132,
             "last_updated": 1742662585.4404132
+          },
+          {
+            "entity_name": "",
+            "information": "The player greeted with 'hello'",
+            "confidence": 1,
+            "first_learned": 1746540559.674758,
+            "last_updated": 1746540559.674758
           }
         ],
         "background": [],
